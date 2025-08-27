@@ -670,61 +670,26 @@
           showNotification('Game is taking longer than usual to load. Please wait...', 'warning', 5000);
         }
         
-        // Force timeout if loading takes too long (only once)
-        if (loadTime > PERFORMANCE_CONFIG.maxLoadTime && !isGameLoaded && !performanceWarningsShown.has('timeout')) {
-          performanceWarningsShown.add('timeout');
-          handleLoadTimeout();
-        }
+        // Remove aggressive timeout - let Unity handle its own loading
+        // This prevents constant timeout messages and refresh buttons
       }
 
-      // Handle loading timeout
-      function handleLoadTimeout() {
-        // Prevent multiple timeout handlers from running
+      // Handle loading issues gracefully without aggressive timeouts
+      function handleLoadingIssue() {
+        // Only show this if we're actually stuck, not just slow
         if (isLoading === false) {
           return;
         }
         
-        isLoading = false;
-        currentRoomState = ROOM_STATES.FAILED;
+        // Show a gentle message instead of aggressive timeout
+        showNotification('Game loading is taking longer than expected. Please be patient.', 'info', 8000);
         
-        showNotification('Game loading timeout. Please refresh the page manually.', 'error', 10000);
-        statusIndicator.innerHTML = '<i class="fas fa-circle"></i> Timeout';
-        statusIndicator.className = 'status-indicator error';
-        
-        // Add manual refresh button
-        addManualRefreshButton();
-        
-        // Reset loading state
-        if (loadingScreen) {
-          loadingScreen.classList.add('loading-timeout');
-          setTimeout(() => {
-            loadingScreen.style.display = 'none';
-          }, 2000);
-        }
-        
-        // Don't auto-retry - let user manually refresh
-        // This prevents the infinite loop
+        // Don't change status or add refresh button - just inform user
+        // This creates a better user experience
       }
       
-      // Add manual refresh button
-      function addManualRefreshButton() {
-        const refreshButton = document.createElement('button');
-        refreshButton.className = 'manual-refresh-btn';
-        refreshButton.innerHTML = '<i class="fas fa-redo"></i> Refresh Page';
-        refreshButton.onclick = () => {
-          location.reload();
-        };
-        
-        // Add to the page
-        document.body.appendChild(refreshButton);
-        
-        // Auto-remove after 30 seconds
-        setTimeout(() => {
-          if (refreshButton.parentNode) {
-            refreshButton.remove();
-          }
-        }, 30000);
-      }
+      // Remove manual refresh button - not needed with new approach
+      // Users can use browser refresh if they really need to
 
       // Memory monitoring
       function checkMemoryUsage() {
@@ -1290,9 +1255,6 @@
           
           // Initialize game room system
           initializeGameRooms();
-          
-          // Clear global timeout protection since game loaded successfully
-          clearGlobalTimeoutProtection();
         }).catch((message) => {
           clearInterval(performanceInterval);
           console.error('Unity loading failed:', message);
@@ -1436,51 +1398,27 @@
         }
       }
       
-      // Global timeout protection to prevent infinite loops
-      function initializeGlobalTimeoutProtection() {
-        // Set a global timeout that will force reset if system gets stuck
-        globalTimeoutProtection = setTimeout(() => {
-          if (isLoading || isRoomLoading) {
-            console.warn('Global timeout protection triggered - resetting system state');
-            forceResetSystem();
+      // Gentle performance monitoring instead of aggressive timeouts
+      function initializeGentleMonitoring() {
+        // Monitor loading progress without forcing timeouts
+        const monitorInterval = setInterval(() => {
+          if (isGameLoaded) {
+            clearInterval(monitorInterval);
+            return;
           }
-        }, 60000); // 60 seconds global timeout
+          
+          // Only show gentle reminders, not aggressive timeouts
+          if (Date.now() - loadStartTime > 45000) { // 45 seconds
+            if (!performanceWarningsShown.has('gentle')) {
+              performanceWarningsShown.add('gentle');
+              showNotification('Game is still loading. This may take a few minutes on slower connections.', 'info', 10000);
+            }
+          }
+        }, 10000); // Check every 10 seconds
       }
       
-      // Force reset system when stuck
-      function forceResetSystem() {
-        // Clear all timeouts
-        if (roomLoadTimeout) clearTimeout(roomLoadTimeout);
-        if (globalTimeoutProtection) clearTimeout(globalTimeoutProtection);
-        
-        // Reset all states
-        isLoading = false;
-        isRoomLoading = false;
-        isRetrying = false;
-        retryCount = 0;
-        currentRoomState = ROOM_STATES.IDLE;
-        currentRoomId = null;
-        
-        // Clear all notifications
-        dismissAllNotifications();
-        
-        // Show recovery message
-        showNotification('System recovered from stuck state. Please refresh the page.', 'warning', 8000);
-        
-        // Add manual refresh button
-        addManualRefreshButton();
-      }
-      
-      // Clear global timeout protection when game loads successfully
-      function clearGlobalTimeoutProtection() {
-        if (globalTimeoutProtection) {
-          clearTimeout(globalTimeoutProtection);
-          globalTimeoutProtection = null;
-        }
-      }
-      
-      // Initialize global timeout protection after all functions are defined
-      initializeGlobalTimeoutProtection();
+      // Initialize gentle monitoring instead of aggressive timeout protection
+      initializeGentleMonitoring();
     </script>
   </body>
 </html>
