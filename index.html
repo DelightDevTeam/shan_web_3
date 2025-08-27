@@ -189,7 +189,8 @@
       // Performance monitoring
       let loadStartTime = Date.now();
       let lastProgressUpdate = 0;
-
+      let performanceWarningsShown = new Set();
+      
       // DOM Elements
       const loadingScreen = document.getElementById('modern-loading-screen');
       const progressFill = document.getElementById('modern-progress-fill');
@@ -212,13 +213,16 @@
       let isRoomLoading = false;
       let roomLoadTimeout = null;
       let currentRoomId = null;
+      let retryCount = 0;
+      let isRetrying = false;
       
       // Room loading configuration
       const ROOM_CONFIG = {
         maxLoadTime: 15000, // 15 seconds max for room loading
         progressInterval: 100, // Update progress every 100ms
-        retryAttempts: 2,
-        fallbackDelay: 3000 // Wait 3 seconds before fallback
+        maxRetryAttempts: 2, // Maximum retry attempts
+        fallbackDelay: 3000, // Wait 3 seconds before fallback
+        retryCooldown: 5000 // Wait 5 seconds between retries
       };
       
       // Game room loading states
@@ -227,7 +231,9 @@
         LOADING: 'loading',
         SUCCESS: 'success',
         ERROR: 'error',
-        TIMEOUT: 'timeout'
+        TIMEOUT: 'timeout',
+        RETRYING: 'retrying',
+        FAILED: 'failed'
       };
       
       let currentRoomState = ROOM_STATES.IDLE;
@@ -413,25 +419,56 @@
         // Hide loading overlay
         hideRoomLoadingOverlay();
         
-        showNotification(`Room loading timeout. Attempting recovery...`, 'error', 5000);
+        // Check if we've exceeded retry attempts
+        if (retryCount >= ROOM_CONFIG.maxRetryAttempts) {
+          // Max retries exceeded, show failure state
+          currentRoomState = ROOM_STATES.FAILED;
+          showNotification(`Room loading failed after ${ROOM_CONFIG.maxRetryAttempts} attempts. Please try again later.`, 'error', 8000);
+          
+          // Update UI to show failure
+          updateRoomLoadingUI(currentRoomId, false);
+          
+          // Reset everything after delay
+          setTimeout(() => {
+            resetRoomState();
+          }, 5000);
+          
+          return;
+        }
+        
+        // Increment retry count
+        retryCount++;
+        
+        showNotification(`Room loading timeout (attempt ${retryCount}/${ROOM_CONFIG.maxRetryAttempts}). Retrying...`, 'warning', 5000);
         
         // Update UI
         updateRoomLoadingUI(currentRoomId, false);
         
-        // Try to recover from timeout
+        // Wait for cooldown before retrying
         setTimeout(() => {
-          if (gameInstance) {
-            try {
-              // Send recovery message to Unity
-              gameInstance.SendMessage('GameManager', 'RecoverFromTimeout');
-            } catch (e) {
-              console.warn('Unity recovery failed:', e);
-            }
+          if (!isRetrying && retryCount <= ROOM_CONFIG.maxRetryAttempts) {
+            retryRoomLoad();
           }
-          
-          // Reset state
-          resetRoomState();
-        }, ROOM_CONFIG.fallbackDelay);
+        }, ROOM_CONFIG.retryCooldown);
+      }
+      
+      // Retry room loading
+      function retryRoomLoad() {
+        if (isRetrying || retryCount > ROOM_CONFIG.maxRetryAttempts) {
+          return;
+        }
+        
+        isRetrying = true;
+        currentRoomState = ROOM_STATES.RETRYING;
+        
+        showNotification(`Retrying room load (attempt ${retryCount}/${ROOM_CONFIG.maxRetryAttempts})...`, 'info', 4000);
+        
+        // Reset loading state and try again
+        setTimeout(() => {
+          if (currentRoomId) {
+            loadGameRoom(currentRoomId);
+          }
+        }, 1000);
       }
       
       // Handle room loading fallback
@@ -620,31 +657,46 @@
       window.addEventListener("resize", checkOrientation);
       window.addEventListener("orientationchange", checkOrientation);
       checkOrientation();
+      
+      // Initialize global timeout protection
+      initializeGlobalTimeoutProtection();
 
       // Performance monitoring
       function checkPerformance() {
         const currentTime = Date.now();
         const loadTime = currentTime - loadStartTime;
         
-        // Show warning if loading takes too long
-        if (loadTime > PERFORMANCE_CONFIG.timeoutWarning && !isGameLoaded) {
+        // Show warning if loading takes too long (only once)
+        if (loadTime > PERFORMANCE_CONFIG.timeoutWarning && !isGameLoaded && !performanceWarningsShown.has('slow')) {
+          performanceWarningsShown.add('slow');
           showNotification('Game is taking longer than usual to load. Please wait...', 'warning', 5000);
         }
         
-        // Force timeout if loading takes too long
-        if (loadTime > PERFORMANCE_CONFIG.maxLoadTime && !isGameLoaded) {
+        // Force timeout if loading takes too long (only once)
+        if (loadTime > PERFORMANCE_CONFIG.maxLoadTime && !isGameLoaded && !performanceWarningsShown.has('timeout')) {
+          performanceWarningsShown.add('timeout');
           handleLoadTimeout();
         }
       }
 
       // Handle loading timeout
       function handleLoadTimeout() {
-        showNotification('Game loading timeout. Please refresh the page.', 'error', 10000);
+        // Prevent multiple timeout handlers from running
+        if (isLoading === false) {
+          return;
+        }
+        
+        isLoading = false;
+        currentRoomState = ROOM_STATES.FAILED;
+        
+        showNotification('Game loading timeout. Please refresh the page manually.', 'error', 10000);
         statusIndicator.innerHTML = '<i class="fas fa-circle"></i> Timeout';
         statusIndicator.className = 'status-indicator error';
         
+        // Add manual refresh button
+        addManualRefreshButton();
+        
         // Reset loading state
-        isLoading = false;
         if (loadingScreen) {
           loadingScreen.classList.add('loading-timeout');
           setTimeout(() => {
@@ -652,11 +704,28 @@
           }, 2000);
         }
         
-        // Auto-retry after timeout instead of showing alert
-        setTimeout(() => {
-          showNotification('Automatically retrying game load...', 'info', 5000);
+        // Don't auto-retry - let user manually refresh
+        // This prevents the infinite loop
+      }
+      
+      // Add manual refresh button
+      function addManualRefreshButton() {
+        const refreshButton = document.createElement('button');
+        refreshButton.className = 'manual-refresh-btn';
+        refreshButton.innerHTML = '<i class="fas fa-redo"></i> Refresh Page';
+        refreshButton.onclick = () => {
           location.reload();
-        }, 5000);
+        };
+        
+        // Add to the page
+        document.body.appendChild(refreshButton);
+        
+        // Auto-remove after 30 seconds
+        setTimeout(() => {
+          if (refreshButton.parentNode) {
+            refreshButton.remove();
+          }
+        }, 30000);
       }
 
       // Memory monitoring
@@ -1363,6 +1432,52 @@
         const connection = navigator.connection;
         if (connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g') {
           showNotification('Slow connection detected. Game may take longer to load.', 'warning', 8000);
+        }
+      }
+      
+      // Global timeout protection to prevent infinite loops
+      let globalTimeoutProtection = null;
+      
+      // Initialize global timeout protection
+      function initializeGlobalTimeoutProtection() {
+        // Set a global timeout that will force reset if system gets stuck
+        globalTimeoutProtection = setTimeout(() => {
+          if (isLoading || isRoomLoading) {
+            console.warn('Global timeout protection triggered - resetting system state');
+            forceResetSystem();
+          }
+        }, 60000); // 60 seconds global timeout
+      }
+      
+      // Force reset system when stuck
+      function forceResetSystem() {
+        // Clear all timeouts
+        if (roomLoadTimeout) clearTimeout(roomLoadTimeout);
+        if (globalTimeoutProtection) clearTimeout(globalTimeoutProtection);
+        
+        // Reset all states
+        isLoading = false;
+        isRoomLoading = false;
+        isRetrying = false;
+        retryCount = 0;
+        currentRoomState = ROOM_STATES.IDLE;
+        currentRoomId = null;
+        
+        // Clear all notifications
+        dismissAllNotifications();
+        
+        // Show recovery message
+        showNotification('System recovered from stuck state. Please refresh the page.', 'warning', 8000);
+        
+        // Add manual refresh button
+        addManualRefreshButton();
+      }
+      
+      // Clear global timeout protection when game loads successfully
+      function clearGlobalTimeoutProtection() {
+        if (globalTimeoutProtection) {
+          clearTimeout(globalTimeoutProtection);
+          globalTimeoutProtection = null;
         }
       }
     </script>
