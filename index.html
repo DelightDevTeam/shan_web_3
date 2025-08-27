@@ -167,6 +167,12 @@
       let gameInstance = null;
       let isLoading = true;
       let currentProgress = 0;
+      let loadingTimeout = null;
+      let isGameLoaded = false;
+
+      // Performance monitoring
+      let loadStartTime = Date.now();
+      let lastProgressUpdate = 0;
 
       // DOM Elements
       const loadingScreen = document.getElementById('modern-loading-screen');
@@ -176,6 +182,15 @@
       const settingsModal = document.getElementById('settings-modal');
       const helpModal = document.getElementById('help-modal');
       const notificationContainer = document.getElementById('notification-container');
+
+      // Performance optimization settings
+      const PERFORMANCE_CONFIG = {
+        maxLoadTime: 30000, // 30 seconds max loading time
+        progressUpdateInterval: 100, // Update progress every 100ms
+        memoryThreshold: 0.8, // 80% memory usage threshold
+        timeoutWarning: 15000, // Show warning after 15 seconds
+        retryAttempts: 3
+      };
 
       // Device Orientation Check
       function checkOrientation() {
@@ -191,6 +206,93 @@
       window.addEventListener("resize", checkOrientation);
       window.addEventListener("orientationchange", checkOrientation);
       checkOrientation();
+
+      // Performance monitoring
+      function checkPerformance() {
+        const currentTime = Date.now();
+        const loadTime = currentTime - loadStartTime;
+        
+        // Show warning if loading takes too long
+        if (loadTime > PERFORMANCE_CONFIG.timeoutWarning && !isGameLoaded) {
+          showNotification('Game is taking longer than usual to load. Please wait...', 'warning', 5000);
+        }
+        
+        // Force timeout if loading takes too long
+        if (loadTime > PERFORMANCE_CONFIG.maxLoadTime && !isGameLoaded) {
+          handleLoadTimeout();
+        }
+      }
+
+      // Handle loading timeout
+      function handleLoadTimeout() {
+        showNotification('Game loading timeout. Please refresh the page.', 'error', 10000);
+        statusIndicator.innerHTML = '<i class="fas fa-circle"></i> Timeout';
+        statusIndicator.className = 'status-indicator error';
+        
+        // Reset loading state
+        isLoading = false;
+        if (loadingScreen) {
+          loadingScreen.style.display = 'none';
+        }
+      }
+
+      // Memory monitoring
+      function checkMemoryUsage() {
+        if ('memory' in performance) {
+          const memoryInfo = performance.memory;
+          const usagePercent = memoryInfo.usedJSHeapSize / memoryInfo.jsHeapSizeLimit;
+          
+          if (usagePercent > PERFORMANCE_CONFIG.memoryThreshold) {
+            showNotification('High memory usage detected. Consider refreshing the page.', 'warning', 5000);
+          }
+        }
+      }
+
+      // Optimized progress update
+      function updateProgress(progress) {
+        const currentTime = Date.now();
+        
+        // Throttle progress updates for better performance
+        if (currentTime - lastProgressUpdate < PERFORMANCE_CONFIG.progressUpdateInterval) {
+          return;
+        }
+        
+        currentProgress = progress;
+        lastProgressUpdate = currentTime;
+        
+        if (progressFill && progressText) {
+          progressFill.style.width = (100 * progress) + "%";
+          progressText.textContent = Math.round(100 * progress) + "%";
+        }
+        
+        // Check performance periodically
+        checkPerformance();
+        
+        if (progress >= 1) {
+          handleGameLoaded();
+        }
+      }
+
+      // Handle successful game load
+      function handleGameLoaded() {
+        isGameLoaded = true;
+        isLoading = false;
+        
+        setTimeout(() => {
+          if (loadingScreen) {
+            loadingScreen.classList.add('fade-out');
+            setTimeout(() => {
+              loadingScreen.style.display = 'none';
+              statusIndicator.innerHTML = '<i class="fas fa-circle"></i> Playing';
+              statusIndicator.className = 'status-indicator playing';
+              showNotification('Game loaded successfully!', 'success');
+              
+              // Start performance monitoring
+              setInterval(checkMemoryUsage, 10000); // Check every 10 seconds
+            }, 500);
+          }
+        }, 500);
+      }
 
       // Modal Management
       function showModal(modal) {
@@ -234,7 +336,7 @@
         // Here you can add Unity audio control logic
       });
 
-      // Notification System
+      // Enhanced Notification System
       function showNotification(message, type = 'info', duration = 3000) {
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
@@ -257,12 +359,13 @@
         }, duration);
       }
 
-      // Unity Integration
+      // Unity Integration with Performance Optimizations
       var container = document.querySelector("#unity-container");
       var canvas = document.querySelector("#unity-canvas");
       var fullscreenButton = document.getElementById("fullscreen-btn");
       var warningBanner = document.querySelector("#unity-warning");
 
+      // Enhanced Unity banner system
       function unityShowBanner(msg, type) {
         function updateBannerVisibility() {
           warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
@@ -274,6 +377,11 @@
         if (type == 'error') {
           div.className = 'warning-item error';
           showNotification(msg, 'error', 5000);
+          
+          // Handle Unity errors gracefully
+          if (msg.includes('room') || msg.includes('connection')) {
+            showNotification('Connection issue detected. Please check your internet and try again.', 'warning', 8000);
+          }
         } else if (type == 'warning') {
           div.className = 'warning-item warning';
           showNotification(msg, 'warning', 3000);
@@ -292,7 +400,7 @@
         updateBannerVisibility();
       }
 
-      // Unity Configuration
+      // Unity Configuration with Performance Settings
       var buildUrl = "Build";
       var loaderUrl = buildUrl + "/SKMWebDelight.loader.js";
       var config = {
@@ -304,12 +412,27 @@
         productName: "GoldenMM",
         productVersion: "1.0.3",
         showBanner: unityShowBanner,
+        // Performance optimizations
+        devicePixelRatio: window.devicePixelRatio || 1,
+        // Reduce initial memory allocation
+        initialMemorySize: 16 * 1024 * 1024, // 16MB initial
+        maximumMemorySize: 256 * 1024 * 1024, // 256MB max
+        // Enable streaming for large assets
+        streamingAssetsUrl: "StreamingAssets",
+        // Optimize for mobile
+        mobileTemplate: "PROGRESSIVE",
+        // Enable compression
+        compressionFormat: "BROTLI"
       };
 
       // Mobile Detection and Setup
       if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
         container.className = "unity-container unity-mobile";
         canvas.className = "unity-mobile";
+        
+        // Additional mobile optimizations
+        config.initialMemorySize = 8 * 1024 * 1024; // 8MB for mobile
+        config.maximumMemorySize = 128 * 1024 * 1024; // 128MB max for mobile
       } else {
         canvas.style.width = "960px";
         canvas.style.height = "600px";
@@ -322,35 +445,55 @@
         }
       });
 
-      // Load Unity
+      // Enhanced Unity Loading with Error Recovery
       var script = document.createElement("script");
       script.src = loaderUrl;
       script.onload = () => {
+        // Start performance monitoring
+        const performanceInterval = setInterval(checkPerformance, 1000);
+        
         createUnityInstance(canvas, config, (progress) => {
-          currentProgress = progress;
-          progressFill.style.width = (100 * progress) + "%";
-          progressText.textContent = Math.round(100 * progress) + "%";
-          
-          if (progress >= 1) {
-            setTimeout(() => {
-              loadingScreen.classList.add('fade-out');
-              setTimeout(() => {
-                loadingScreen.style.display = 'none';
-                isLoading = false;
-                statusIndicator.innerHTML = '<i class="fas fa-circle"></i> Playing';
-                statusIndicator.className = 'status-indicator playing';
-                showNotification('Game loaded successfully!', 'success');
-              }, 500);
-            }, 500);
-          }
+          updateProgress(progress);
         }).then((unityInstance) => {
           gameInstance = unityInstance;
+          clearInterval(performanceInterval);
+          
+          // Add Unity event listeners for better error handling
+          if (unityInstance) {
+            // Listen for Unity errors
+            unityInstance.on('error', (error) => {
+              console.error('Unity Error:', error);
+              showNotification('Game error occurred. Please refresh the page.', 'error', 8000);
+            });
+            
+            // Listen for Unity warnings
+            unityInstance.on('warning', (warning) => {
+              console.warn('Unity Warning:', warning);
+              showNotification('Game warning: ' + warning, 'warning', 5000);
+            });
+          }
+          
           showNotification('Welcome to GoldenMM!', 'success');
         }).catch((message) => {
+          clearInterval(performanceInterval);
           showNotification('Failed to load game: ' + message, 'error');
           statusIndicator.innerHTML = '<i class="fas fa-circle"></i> Error';
           statusIndicator.className = 'status-indicator error';
+          
+          // Provide retry option
+          setTimeout(() => {
+            if (confirm('Game failed to load. Would you like to retry?')) {
+              location.reload();
+            }
+          }, 2000);
         });
+      };
+      
+      // Handle script loading errors
+      script.onerror = () => {
+        showNotification('Failed to load game files. Please check your internet connection.', 'error', 10000);
+        statusIndicator.innerHTML = '<i class="fas fa-circle"></i> Load Error';
+        statusIndicator.className = 'status-indicator error';
       };
       
       document.body.appendChild(script);
@@ -368,6 +511,50 @@
           if (helpModal.style.display === 'flex') hideModal(helpModal);
         }
       });
+
+      // Page visibility API for better performance
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          // Page is hidden, reduce performance
+          if (gameInstance) {
+            // Pause Unity if possible
+            try {
+              gameInstance.SendMessage('GameManager', 'OnPageHidden');
+            } catch (e) {
+              // Unity not ready yet
+            }
+          }
+        } else {
+          // Page is visible, restore performance
+          if (gameInstance) {
+            try {
+              gameInstance.SendMessage('GameManager', 'OnPageVisible');
+            } catch (e) {
+              // Unity not ready yet
+            }
+          }
+        }
+      });
+
+      // Handle page unload gracefully
+      window.addEventListener('beforeunload', () => {
+        if (gameInstance) {
+          try {
+            // Clean up Unity resources
+            gameInstance.Quit();
+          } catch (e) {
+            // Unity already unloaded
+          }
+        }
+      });
+
+      // Performance warning for slow devices
+      if ('connection' in navigator) {
+        const connection = navigator.connection;
+        if (connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g') {
+          showNotification('Slow connection detected. Game may take longer to load.', 'warning', 8000);
+        }
+      }
     </script>
   </body>
 </html>
