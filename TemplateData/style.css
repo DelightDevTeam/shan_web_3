@@ -393,6 +393,12 @@ body {
   animation: pulse 2s infinite;
 }
 
+.status-indicator.webgl-compatibility {
+  color: #a855f7;
+  background: rgba(168, 85, 247, 0.1);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
 .status-indicator.memory-error {
   color: #10b981;
   animation: pulse 2s infinite;

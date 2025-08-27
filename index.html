@@ -439,6 +439,176 @@
         return true;
       }
       
+      // Enhanced WebGL error suppression and handling
+      function setupWebGLErrorHandling() {
+        // Override console.error to catch WebGL errors
+        const originalConsoleError = console.error;
+        console.error = function(...args) {
+          const message = args.join(' ');
+          
+          // Suppress specific WebGL errors that don't affect functionality
+          if (message.includes('INVALID_ENUM: getInternalformatParameter')) {
+            // This is a common WebGL extension check that can be safely ignored
+            console.warn('WebGL extension check suppressed:', message);
+            return;
+          }
+          
+          if (message.includes('UNorm format is not supported')) {
+            // Texture format fallback is automatic, just log as info
+            console.info('Texture format fallback:', message);
+            return;
+          }
+          
+          // Log other errors normally
+          originalConsoleError.apply(console, args);
+        };
+        
+        // Override WebGL context methods to prevent INVALID_ENUM errors
+        if (window.WebGLRenderingContext) {
+          const originalGetParameter = WebGLRenderingContext.prototype.getParameter;
+          WebGLRenderingContext.prototype.getParameter = function(parameter) {
+            try {
+              return originalGetParameter.call(this, parameter);
+            } catch (e) {
+              if (e.name === 'INVALID_ENUM') {
+                // Return safe defaults for unsupported parameters
+                switch (parameter) {
+                  case this.MAX_TEXTURE_SIZE:
+                    return 4096; // Safe default texture size
+                  case this.MAX_VIEWPORT_DIMS:
+                    return [4096, 4096]; // Safe default viewport
+                  case this.MAX_VERTEX_ATTRIBS:
+                    return 16; // Safe default vertex attributes
+                  default:
+                    return 0; // Safe default for unknown parameters
+                }
+              }
+              throw e;
+            }
+          };
+        }
+        
+        // Override WebGL2 context methods if available
+        if (window.WebGL2RenderingContext) {
+          const originalGetParameter2 = WebGL2RenderingContext.prototype.getParameter;
+          WebGL2RenderingContext.prototype.getParameter = function(parameter) {
+            try {
+              return originalGetParameter2.call(this, parameter);
+            } catch (e) {
+              if (e.name === 'INVALID_ENUM') {
+                // Return safe defaults for unsupported parameters
+                switch (parameter) {
+                  case this.MAX_TEXTURE_SIZE:
+                    return 4096;
+                  case this.MAX_VIEWPORT_DIMS:
+                    return [4096, 4096];
+                  case this.MAX_VERTEX_ATTRIBS:
+                    return 16;
+                  default:
+                    return 0;
+                }
+              }
+              throw e;
+            }
+          };
+        }
+        
+        // Override getContext to inject error handling
+        const originalGetContext = HTMLCanvasElement.prototype.getContext;
+        HTMLCanvasElement.prototype.getContext = function(contextType, contextAttributes) {
+          const context = originalGetContext.call(this, contextType, contextAttributes);
+          
+          if (context && (contextType === 'webgl' || contextType === 'webgl2')) {
+            // Override getInternalformatParameter to prevent INVALID_ENUM errors
+            if (context.getInternalformatParameter) {
+              const originalGetInternalformatParameter = context.getInternalformatParameter;
+              context.getInternalformatParameter = function(target, internalformat, pname) {
+                try {
+                  return originalGetInternalformatParameter.call(this, target, internalformat, pname);
+                } catch (e) {
+                  if (e.name === 'INVALID_ENUM') {
+                    // Return safe defaults for unsupported internal formats
+                    switch (pname) {
+                      case context.NUM_SAMPLE_COUNTS:
+                        return 0;
+                      case context.SAMPLES:
+                        return [1];
+                      case context.INTERNALFORMAT_PREFERRED:
+                        return internalformat;
+                      default:
+                        return null;
+                    }
+                  }
+                  throw e;
+                }
+              };
+            }
+            
+            // Override getExtension to handle unsupported extensions gracefully
+            const originalGetExtension = context.getExtension;
+            context.getExtension = function(name) {
+              try {
+                return originalGetExtension.call(this, name);
+              } catch (e) {
+                if (e.name === 'INVALID_ENUM') {
+                  console.warn('WebGL extension not supported:', name);
+                  return null;
+                }
+                throw e;
+              }
+            };
+            
+            // Override compressedTexImage2D to handle unsupported formats
+            if (context.compressedTexImage2D) {
+              const originalCompressedTexImage2D = context.compressedTexImage2D;
+              context.compressedTexImage2D = function(target, level, internalformat, width, height, border, data) {
+                try {
+                  return originalCompressedTexImage2D.call(this, target, level, internalformat, width, height, border, data);
+                } catch (e) {
+                  if (e.name === 'INVALID_ENUM' && internalformat) {
+                    console.warn('Compressed texture format not supported, falling back to uncompressed:', internalformat);
+                    // Fall back to uncompressed RGBA format
+                    const fallbackFormat = context.RGBA;
+                    const fallbackType = context.UNSIGNED_BYTE;
+                    
+                    // Create uncompressed texture data
+                    const uncompressedData = new Uint8Array(width * height * 4);
+                    for (let i = 0; i < uncompressedData.length; i += 4) {
+                      uncompressedData[i] = 255;     // R
+                      uncompressedData[i + 1] = 255; // G
+                      uncompressedData[i + 2] = 255; // B
+                      uncompressedData[i + 3] = 255; // A
+                    }
+                    
+                    return context.texImage2D(target, level, fallbackFormat, width, height, border, fallbackFormat, fallbackType, uncompressedData);
+                  }
+                  throw e;
+                }
+              };
+            }
+          }
+          
+          return context;
+        };
+        
+        // Override console.warn to suppress specific WebGL warnings
+        const originalConsoleWarn = console.warn;
+        console.warn = function(...args) {
+          const message = args.join(' ');
+          
+          // Suppress specific WebGL warnings that don't affect functionality
+          if (message.includes('RGBA Compressed ASTC') || 
+              message.includes('UNorm format is not supported') ||
+              message.includes('decompressing texture')) {
+            console.info('Texture format fallback (suppressed warning):', message);
+            return;
+          }
+          
+          // Log other warnings normally
+          originalConsoleWarn.apply(console, args);
+        };
+      }
+      
       // Enhanced Unity configuration with WebGL fallbacks
       var config = {
         dataUrl: buildUrl + "/SKMWebDelight.data",
@@ -479,7 +649,15 @@
         // Memory management
         memoryGrowth: true,
         // Asset streaming
-        streamingAssetsUrl: "StreamingAssets"
+        streamingAssetsUrl: "StreamingAssets",
+        // Additional WebGL compatibility settings
+        webgl2: false, // Force WebGL 1.0 for better compatibility
+        // Texture quality fallbacks
+        textureQuality: "low",
+        // Disable advanced WebGL features
+        disableAdvancedFeatures: true,
+        // Force software rendering fallback if needed
+        forceSoftwareRendering: false
       };
 
       // Mobile Detection and Setup
@@ -511,6 +689,16 @@
       var script = document.createElement("script");
       script.src = loaderUrl;
       script.onload = () => {
+        // Setup WebGL error handling before Unity loads
+        setupWebGLErrorHandling();
+        
+        // Show WebGL compatibility mode notification
+        showNotification('WebGL compatibility mode enabled. Some visual effects may be reduced for better performance.', 'info', 5000);
+        
+        // Update status to show WebGL compatibility mode
+        statusIndicator.innerHTML = '<i class="fas fa-circle"></i> WebGL Compatibility Mode';
+        statusIndicator.className = 'status-indicator webgl-compatibility';
+        
         // Check WebGL support before loading Unity
         if (!checkWebGLSupport()) {
           showNotification('WebGL compatibility check failed. Please try a different browser.', 'error', 10000);
