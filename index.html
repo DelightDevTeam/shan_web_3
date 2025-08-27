@@ -403,6 +403,43 @@
       // Unity Configuration with Performance Settings
       var buildUrl = "Build";
       var loaderUrl = buildUrl + "/SKMWebDelight.loader.js";
+      
+      // WebGL Compatibility Check
+      function checkWebGLSupport() {
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        
+        if (!gl) {
+          showNotification('WebGL is not supported in your browser. Please update your browser or enable WebGL.', 'error', 10000);
+          return false;
+        }
+        
+        // Check for specific WebGL extensions and capabilities
+        const extensions = gl.getSupportedExtensions();
+        const hasCompressedTextures = extensions.includes('WEBGL_compressed_texture_astc') || 
+                                    extensions.includes('WEBGL_compressed_texture_s3tc') ||
+                                    extensions.includes('WEBGL_compressed_texture_etc');
+        
+        if (!hasCompressedTextures) {
+          showNotification('Compressed textures not supported. Game may load slower.', 'warning', 5000);
+        }
+        
+        // Check WebGL version
+        const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+        if (debugInfo) {
+          const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+          console.log('WebGL Renderer:', renderer);
+          
+          // Check for known problematic renderers
+          if (renderer.includes('Intel') || renderer.includes('AMD')) {
+            showNotification('Graphics driver compatibility detected. Game may have reduced performance.', 'warning', 5000);
+          }
+        }
+        
+        return true;
+      }
+      
+      // Enhanced Unity configuration with WebGL fallbacks
       var config = {
         dataUrl: buildUrl + "/SKMWebDelight.data",
         frameworkUrl: buildUrl + "/SKMWebDelight.framework.js",
@@ -422,7 +459,27 @@
         // Optimize for mobile
         mobileTemplate: "PROGRESSIVE",
         // Enable compression
-        compressionFormat: "BROTLI"
+        compressionFormat: "BROTLI",
+        // WebGL specific optimizations
+        webglContextAttributes: {
+          alpha: false,
+          antialias: false,
+          depth: true,
+          failIfMajorPerformanceCaveat: false,
+          powerPreference: "default",
+          premultipliedAlpha: false,
+          preserveDrawingBuffer: false,
+          stencil: false,
+          desynchronized: false
+        },
+        // Fallback rendering options
+        fallbackQuality: "low",
+        // Disable problematic features for better compatibility
+        disableWebGL2: false,
+        // Memory management
+        memoryGrowth: true,
+        // Asset streaming
+        streamingAssetsUrl: "StreamingAssets"
       };
 
       // Mobile Detection and Setup
@@ -433,6 +490,11 @@
         // Additional mobile optimizations
         config.initialMemorySize = 8 * 1024 * 1024; // 8MB for mobile
         config.maximumMemorySize = 128 * 1024 * 1024; // 128MB max for mobile
+        
+        // Mobile-specific WebGL settings
+        config.webglContextAttributes.antialias = false;
+        config.webglContextAttributes.powerPreference = "low-power";
+        config.fallbackQuality = "low";
       } else {
         canvas.style.width = "960px";
         canvas.style.height = "600px";
@@ -445,13 +507,22 @@
         }
       });
 
-      // Enhanced Unity Loading with Error Recovery
+      // Enhanced Unity Loading with Error Recovery and WebGL Compatibility
       var script = document.createElement("script");
       script.src = loaderUrl;
       script.onload = () => {
+        // Check WebGL support before loading Unity
+        if (!checkWebGLSupport()) {
+          showNotification('WebGL compatibility check failed. Please try a different browser.', 'error', 10000);
+          statusIndicator.innerHTML = '<i class="fas fa-circle"></i> WebGL Error';
+          statusIndicator.className = 'status-indicator error';
+          return;
+        }
+        
         // Start performance monitoring
         const performanceInterval = setInterval(checkPerformance, 1000);
         
+        // Enhanced Unity instance creation with error handling
         createUnityInstance(canvas, config, (progress) => {
           updateProgress(progress);
         }).then((unityInstance) => {
@@ -463,31 +534,117 @@
             // Listen for Unity errors
             unityInstance.on('error', (error) => {
               console.error('Unity Error:', error);
-              showNotification('Game error occurred. Please refresh the page.', 'error', 8000);
+              
+              // Handle specific WebGL errors
+              if (error.includes('WebGL') || error.includes('INVALID_ENUM')) {
+                showNotification('WebGL rendering error. Trying to recover...', 'warning', 5000);
+                
+                // Attempt to restart with fallback settings
+                setTimeout(() => {
+                  if (confirm('WebGL error detected. Would you like to try with reduced graphics settings?')) {
+                    restartWithFallbackSettings();
+                  }
+                }, 2000);
+              } else {
+                showNotification('Game error occurred. Please refresh the page.', 'error', 8000);
+              }
             });
             
             // Listen for Unity warnings
             unityInstance.on('warning', (warning) => {
               console.warn('Unity Warning:', warning);
-              showNotification('Game warning: ' + warning, 'warning', 5000);
+              
+              // Handle texture format warnings
+              if (warning.includes('UNorm') || warning.includes('ASTC')) {
+                showNotification('Texture compatibility issue detected. Game may have reduced visual quality.', 'warning', 5000);
+              } else {
+                showNotification('Game warning: ' + warning, 'warning', 5000);
+              }
+            });
+            
+            // Listen for Unity ready state
+            unityInstance.on('ready', () => {
+              console.log('Unity instance ready');
+              showNotification('Game engine ready!', 'success', 3000);
             });
           }
           
           showNotification('Welcome to GoldenMM!', 'success');
         }).catch((message) => {
           clearInterval(performanceInterval);
-          showNotification('Failed to load game: ' + message, 'error');
-          statusIndicator.innerHTML = '<i class="fas fa-circle"></i> Error';
+          console.error('Unity loading failed:', message);
+          
+          // Enhanced error categorization
+          let errorType = 'unknown';
+          let userMessage = 'Failed to load game: ' + message;
+          
+          if (message.includes('WebGL') || message.includes('INVALID_ENUM')) {
+            errorType = 'webgl';
+            userMessage = 'WebGL compatibility issue detected. Please try updating your graphics drivers or use a different browser.';
+          } else if (message.includes('memory') || message.includes('out of memory')) {
+            errorType = 'memory';
+            userMessage = 'Insufficient memory to load game. Please close other applications and try again.';
+          } else if (message.includes('network') || message.includes('fetch')) {
+            errorType = 'network';
+            userMessage = 'Network error while loading game files. Please check your internet connection.';
+          }
+          
+          showNotification(userMessage, 'error', 10000);
+          statusIndicator.innerHTML = '<i class="fas fa-circle"></i> ' + errorType.charAt(0).toUpperCase() + errorType.slice(1) + ' Error';
           statusIndicator.className = 'status-indicator error';
           
-          // Provide retry option
+          // Provide specific recovery options based on error type
           setTimeout(() => {
-            if (confirm('Game failed to load. Would you like to retry?')) {
-              location.reload();
+            let retryMessage = 'Game failed to load. Would you like to retry?';
+            
+            if (errorType === 'webgl') {
+              retryMessage = 'WebGL error detected. Would you like to try with compatibility mode?';
+            } else if (errorType === 'memory') {
+              retryMessage = 'Memory error detected. Would you like to try with reduced settings?';
+            }
+            
+            if (confirm(retryMessage)) {
+              if (errorType === 'webgl') {
+                restartWithFallbackSettings();
+              } else if (errorType === 'memory') {
+                restartWithReducedMemory();
+              } else {
+                location.reload();
+              }
             }
           }, 2000);
         });
       };
+      
+      // Fallback settings for WebGL compatibility issues
+      function restartWithFallbackSettings() {
+        showNotification('Restarting with compatibility settings...', 'info', 3000);
+        
+        // Update config for better compatibility
+        config.webglContextAttributes.antialias = false;
+        config.webglContextAttributes.depth = false;
+        config.fallbackQuality = "low";
+        config.initialMemorySize = 8 * 1024 * 1024; // Reduce to 8MB
+        
+        // Reload with new settings
+        setTimeout(() => {
+          location.reload();
+        }, 2000);
+      }
+      
+      // Reduced memory settings for memory issues
+      function restartWithReducedMemory() {
+        showNotification('Restarting with reduced memory settings...', 'info', 3000);
+        
+        // Update config for lower memory usage
+        config.initialMemorySize = 4 * 1024 * 1024; // Reduce to 4MB
+        config.maximumMemorySize = 64 * 1024 * 1024; // Reduce to 64MB
+        
+        // Reload with new settings
+        setTimeout(() => {
+          location.reload();
+        }, 2000);
+      }
       
       // Handle script loading errors
       script.onerror = () => {

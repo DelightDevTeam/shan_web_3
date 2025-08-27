@@ -178,6 +178,44 @@ body {
   background: rgba(248, 113, 113, 0.1);
 }
 
+/* WebGL Compatibility States */
+.loading-screen.webgl-compatibility {
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
+}
+
+.loading-screen.webgl-compatibility .spinner {
+  border-top-color: #a855f7;
+  animation: spin 0.7s linear infinite;
+}
+
+.loading-screen.webgl-compatibility .loading-tips {
+  border-left-color: #a855f7;
+  background: rgba(168, 85, 247, 0.1);
+}
+
+.loading-screen.webgl-compatibility .loading-tips p {
+  color: #c4b5fd;
+}
+
+/* Memory Optimization States */
+.loading-screen.memory-optimized {
+  background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #064e3b 100%);
+}
+
+.loading-screen.memory-optimized .spinner {
+  border-top-color: #10b981;
+  animation: spin 0.6s linear infinite;
+}
+
+.loading-screen.memory-optimized .loading-tips {
+  border-left-color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.loading-screen.memory-optimized .loading-tips p {
+  color: #a7f3d0;
+}
+
 /* Rotate Message */
 .rotate-message {
   position: fixed;
@@ -347,6 +385,21 @@ body {
 
 .status-indicator.timeout {
   color: #fbbf24;
+  animation: pulse 2s infinite;
+}
+
+.status-indicator.webgl-error {
+  color: #a855f7;
+  animation: pulse 2s infinite;
+}
+
+.status-indicator.memory-error {
+  color: #10b981;
+  animation: pulse 2s infinite;
+}
+
+.status-indicator.network-error {
+  color: #3b82f6;
   animation: pulse 2s infinite;
 }
 
