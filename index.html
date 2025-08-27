@@ -3,50 +3,264 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Unity WebGL Player | GoldenMM</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>GoldenMM - Modern Gaming Experience</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   </head>
   <body>
-    <div id="rotate-message" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; color: white; font-size: 24px; text-align: center; display: flex; justify-content: center; align-items: center; z-index: 9999;">
-      Please rotate your device to landscape mode.
-    </div>
-
-    <div id="unity-container" class="unity-desktop">
-      <canvas id="unity-canvas" width=960 height=600 tabindex="-1"></canvas>
-      <div id="unity-loading-bar">
-        <div id="unity-logo"></div>
-        <div id="unity-progress-bar-empty">
-          <div id="unity-progress-bar-full"></div>
+    <!-- Modern Loading Screen -->
+    <div id="modern-loading-screen" class="loading-screen">
+      <div class="loading-content">
+        <div class="game-logo">
+          <i class="fas fa-gamepad"></i>
+          <h1>GoldenMM</h1>
+        </div>
+        <div class="loading-animation">
+          <div class="spinner"></div>
+        </div>
+        <div class="loading-text">
+          <p>Loading your adventure...</p>
+          <div class="progress-container">
+            <div class="progress-bar">
+              <div class="progress-fill" id="modern-progress-fill"></div>
+            </div>
+            <span class="progress-text" id="modern-progress-text">0%</span>
+          </div>
+        </div>
+        <div class="loading-tips">
+          <p><i class="fas fa-lightbulb"></i> Tip: Use WASD or arrow keys to move</p>
         </div>
       </div>
-      <div id="unity-warning"></div>
-      <div id="unity-footer">
-        <div id="unity-webgl-logo"></div>
-        <div id="unity-fullscreen-button"></div>
-        <div id="unity-build-title">GoldenMM</div>
+    </div>
+
+    <!-- Device Orientation Message -->
+    <div id="rotate-message" class="rotate-message">
+      <div class="rotate-content">
+        <i class="fas fa-mobile-alt fa-rotate-90"></i>
+        <h3>Please Rotate Your Device</h3>
+        <p>For the best gaming experience, please rotate to landscape mode</p>
       </div>
     </div>
-    
+
+    <!-- Main Game Container -->
+    <div id="unity-container" class="unity-container">
+      <canvas id="unity-canvas" width=960 height=600 tabindex="-1"></canvas>
+      
+      <!-- Game Controls Overlay -->
+      <div class="game-controls">
+        <button class="control-btn fullscreen-btn" id="fullscreen-btn" title="Toggle Fullscreen">
+          <i class="fas fa-expand"></i>
+        </button>
+        <button class="control-btn settings-btn" id="settings-btn" title="Game Settings">
+          <i class="fas fa-cog"></i>
+        </button>
+        <button class="control-btn help-btn" id="help-btn" title="Help & Controls">
+          <i class="fas fa-question-circle"></i>
+        </button>
+      </div>
+
+      <!-- Game Title Bar -->
+      <div class="game-title-bar">
+        <div class="game-info">
+          <span class="game-title">GoldenMM</span>
+          <span class="game-version">v1.0.3</span>
+        </div>
+        <div class="game-status">
+          <span class="status-indicator" id="status-indicator">
+            <i class="fas fa-circle"></i> Ready
+          </span>
+        </div>
+      </div>
+
+      <!-- Warning Banner -->
+      <div id="unity-warning" class="warning-banner"></div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3><i class="fas fa-cog"></i> Game Settings</h3>
+          <button class="close-btn" id="close-settings">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="setting-group">
+            <label>Graphics Quality</label>
+            <select id="graphics-quality">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+          <div class="setting-group">
+            <label>Sound Volume</label>
+            <input type="range" id="sound-volume" min="0" max="100" value="80">
+            <span class="volume-value">80%</span>
+          </div>
+          <div class="setting-group">
+            <label>Music Volume</label>
+            <input type="range" id="music-volume" min="0" max="100" value="60">
+            <span class="volume-value">60%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="help-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3><i class="fas fa-question-circle"></i> Help & Controls</h3>
+          <button class="close-btn" id="close-help">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="control-section">
+            <h4>Keyboard Controls</h4>
+            <div class="control-grid">
+              <div class="control-item">
+                <span class="key">WASD</span>
+                <span class="action">Move</span>
+              </div>
+              <div class="control-item">
+                <span class="key">Space</span>
+                <span class="action">Jump</span>
+              </div>
+              <div class="control-item">
+                <span class="key">E</span>
+                <span class="action">Interact</span>
+              </div>
+              <div class="control-item">
+                <span class="key">ESC</span>
+                <span class="action">Pause</span>
+              </div>
+            </div>
+          </div>
+          <div class="control-section">
+            <h4>Mouse Controls</h4>
+            <div class="control-grid">
+              <div class="control-item">
+                <span class="key">Left Click</span>
+                <span class="action">Select</span>
+              </div>
+              <div class="control-item">
+                <span class="key">Right Click</span>
+                <span class="action">Context Menu</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification System -->
+    <div id="notification-container" class="notification-container"></div>
+
     <script>
+      // Modern UI State Management
+      let gameInstance = null;
+      let isLoading = true;
+      let currentProgress = 0;
+
+      // DOM Elements
+      const loadingScreen = document.getElementById('modern-loading-screen');
+      const progressFill = document.getElementById('modern-progress-fill');
+      const progressText = document.getElementById('modern-progress-text');
+      const statusIndicator = document.getElementById('status-indicator');
+      const settingsModal = document.getElementById('settings-modal');
+      const helpModal = document.getElementById('help-modal');
+      const notificationContainer = document.getElementById('notification-container');
+
+      // Device Orientation Check
       function checkOrientation() {
-        var message = document.getElementById("rotate-message");
-        if (window.innerHeight > window.innerWidth) {
-          message.style.display = "flex";
+        const rotateMessage = document.getElementById("rotate-message");
+        if (window.innerHeight > window.innerWidth && window.innerWidth < 768) {
+          rotateMessage.style.display = "flex";
         } else {
-          message.style.display = "none";
+          rotateMessage.style.display = "none";
         }
       }
 
+      // Event Listeners
       window.addEventListener("resize", checkOrientation);
       window.addEventListener("orientationchange", checkOrientation);
       checkOrientation();
 
+      // Modal Management
+      function showModal(modal) {
+        modal.style.display = "flex";
+        document.body.style.overflow = "hidden";
+      }
+
+      function hideModal(modal) {
+        modal.style.display = "none";
+        document.body.style.overflow = "auto";
+      }
+
+      // Settings Modal
+      document.getElementById('settings-btn').addEventListener('click', () => {
+        showModal(settingsModal);
+      });
+
+      document.getElementById('close-settings').addEventListener('click', () => {
+        hideModal(settingsModal);
+      });
+
+      // Help Modal
+      document.getElementById('help-btn').addEventListener('click', () => {
+        showModal(helpModal);
+      });
+
+      document.getElementById('close-help').addEventListener('click', () => {
+        hideModal(helpModal);
+      });
+
+      // Volume Controls
+      document.getElementById('sound-volume').addEventListener('input', (e) => {
+        const value = e.target.value;
+        e.target.nextElementSibling.textContent = value + '%';
+        // Here you can add Unity audio control logic
+      });
+
+      document.getElementById('music-volume').addEventListener('input', (e) => {
+        const value = e.target.value;
+        e.target.nextElementSibling.textContent = value + '%';
+        // Here you can add Unity audio control logic
+      });
+
+      // Notification System
+      function showNotification(message, type = 'info', duration = 3000) {
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+          <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+          <span>${message}</span>
+        `;
+        
+        notificationContainer.appendChild(notification);
+        
+        setTimeout(() => {
+          notification.classList.add('show');
+        }, 100);
+        
+        setTimeout(() => {
+          notification.classList.remove('show');
+          setTimeout(() => {
+            notification.remove();
+          }, 300);
+        }, duration);
+      }
+
+      // Unity Integration
       var container = document.querySelector("#unity-container");
       var canvas = document.querySelector("#unity-canvas");
-      var loadingBar = document.querySelector("#unity-loading-bar");
-      var progressBarFull = document.querySelector("#unity-progress-bar-full");
-      var fullscreenButton = document.querySelector("#unity-fullscreen-button");
+      var fullscreenButton = document.getElementById("fullscreen-btn");
       var warningBanner = document.querySelector("#unity-warning");
 
       function unityShowBanner(msg, type) {
@@ -56,17 +270,29 @@
         var div = document.createElement('div');
         div.innerHTML = msg;
         warningBanner.appendChild(div);
-        if (type == 'error') div.style = 'background: red; padding: 10px;';
-        else {
-          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
-          setTimeout(function() {
+        
+        if (type == 'error') {
+          div.className = 'warning-item error';
+          showNotification(msg, 'error', 5000);
+        } else if (type == 'warning') {
+          div.className = 'warning-item warning';
+          showNotification(msg, 'warning', 3000);
+        } else {
+          div.className = 'warning-item info';
+          showNotification(msg, 'info', 2000);
+        }
+        
+        setTimeout(function() {
+          if (warningBanner.contains(div)) {
             warningBanner.removeChild(div);
             updateBannerVisibility();
-          }, 5000);
-        }
+          }
+        }, type === 'error' ? 10000 : 5000);
+        
         updateBannerVisibility();
       }
 
+      // Unity Configuration
       var buildUrl = "Build";
       var loaderUrl = buildUrl + "/SKMWebDelight.loader.js";
       var config = {
@@ -80,36 +306,68 @@
         showBanner: unityShowBanner,
       };
 
+      // Mobile Detection and Setup
       if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        var meta = document.createElement('meta');
-        meta.name = 'viewport';
-        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
-        document.getElementsByTagName('head')[0].appendChild(meta);
-        container.className = "unity-mobile";
+        container.className = "unity-container unity-mobile";
         canvas.className = "unity-mobile";
       } else {
         canvas.style.width = "960px";
         canvas.style.height = "600px";
       }
 
-      loadingBar.style.display = "block";
+      // Fullscreen Button
+      fullscreenButton.addEventListener('click', () => {
+        if (gameInstance) {
+          gameInstance.SetFullscreen(1);
+        }
+      });
 
+      // Load Unity
       var script = document.createElement("script");
       script.src = loaderUrl;
       script.onload = () => {
         createUnityInstance(canvas, config, (progress) => {
-          progressBarFull.style.width = 100 * progress + "%";
+          currentProgress = progress;
+          progressFill.style.width = (100 * progress) + "%";
+          progressText.textContent = Math.round(100 * progress) + "%";
+          
+          if (progress >= 1) {
+            setTimeout(() => {
+              loadingScreen.classList.add('fade-out');
+              setTimeout(() => {
+                loadingScreen.style.display = 'none';
+                isLoading = false;
+                statusIndicator.innerHTML = '<i class="fas fa-circle"></i> Playing';
+                statusIndicator.className = 'status-indicator playing';
+                showNotification('Game loaded successfully!', 'success');
+              }, 500);
+            }, 500);
+          }
         }).then((unityInstance) => {
-          loadingBar.style.display = "none";
-          fullscreenButton.onclick = () => {
-            unityInstance.SetFullscreen(1);
-          };
+          gameInstance = unityInstance;
+          showNotification('Welcome to GoldenMM!', 'success');
         }).catch((message) => {
-          alert(message);
+          showNotification('Failed to load game: ' + message, 'error');
+          statusIndicator.innerHTML = '<i class="fas fa-circle"></i> Error';
+          statusIndicator.className = 'status-indicator error';
         });
       };
       
       document.body.appendChild(script);
+
+      // Close modals when clicking outside
+      window.addEventListener('click', (e) => {
+        if (e.target === settingsModal) hideModal(settingsModal);
+        if (e.target === helpModal) hideModal(helpModal);
+      });
+
+      // Keyboard shortcuts
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          if (settingsModal.style.display === 'flex') hideModal(settingsModal);
+          if (helpModal.style.display === 'flex') hideModal(helpModal);
+        }
+      });
     </script>
   </body>
 </html>
