@@ -185,6 +185,7 @@
       let currentProgress = 0;
       let loadingTimeout = null;
       let isGameLoaded = false;
+      let globalTimeoutProtection = null;
 
       // Performance monitoring
       let loadStartTime = Date.now();
@@ -657,9 +658,6 @@
       window.addEventListener("resize", checkOrientation);
       window.addEventListener("orientationchange", checkOrientation);
       checkOrientation();
-      
-      // Initialize global timeout protection
-      initializeGlobalTimeoutProtection();
 
       // Performance monitoring
       function checkPerformance() {
@@ -1292,6 +1290,9 @@
           
           // Initialize game room system
           initializeGameRooms();
+          
+          // Clear global timeout protection since game loaded successfully
+          clearGlobalTimeoutProtection();
         }).catch((message) => {
           clearInterval(performanceInterval);
           console.error('Unity loading failed:', message);
@@ -1436,9 +1437,6 @@
       }
       
       // Global timeout protection to prevent infinite loops
-      let globalTimeoutProtection = null;
-      
-      // Initialize global timeout protection
       function initializeGlobalTimeoutProtection() {
         // Set a global timeout that will force reset if system gets stuck
         globalTimeoutProtection = setTimeout(() => {
@@ -1480,6 +1478,9 @@
           globalTimeoutProtection = null;
         }
       }
+      
+      // Initialize global timeout protection after all functions are defined
+      initializeGlobalTimeoutProtection();
     </script>
   </body>
 </html>
