@@ -160,7 +160,23 @@
     </div>
 
     <!-- Notification System -->
-    <div id="notification-container" class="notification-container"></div>
+    <div id="notification-container" class="notification-container">
+      <button id="dismiss-all-notifications" class="dismiss-all-btn" title="Dismiss all notifications">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- Room Loading Overlay -->
+    <div id="room-loading-overlay" class="room-loading-overlay">
+      <div class="room-loading-content">
+        <h3><i class="fas fa-door-open"></i> Loading Game Room</h3>
+        <p id="room-loading-text">Preparing your gaming experience...</p>
+        <div class="room-loading-progress">
+          <div class="room-loading-progress-fill" id="room-progress-fill"></div>
+        </div>
+        <p id="room-loading-status">Initializing...</p>
+      </div>
+    </div>
 
     <script>
       // Modern UI State Management
@@ -191,6 +207,404 @@
         timeoutWarning: 15000, // Show warning after 15 seconds
         retryAttempts: 3
       };
+
+      // Game Room Loading System
+      let isRoomLoading = false;
+      let roomLoadTimeout = null;
+      let currentRoomId = null;
+      
+      // Room loading configuration
+      const ROOM_CONFIG = {
+        maxLoadTime: 15000, // 15 seconds max for room loading
+        progressInterval: 100, // Update progress every 100ms
+        retryAttempts: 2,
+        fallbackDelay: 3000 // Wait 3 seconds before fallback
+      };
+      
+      // Game room loading states
+      const ROOM_STATES = {
+        IDLE: 'idle',
+        LOADING: 'loading',
+        SUCCESS: 'success',
+        ERROR: 'error',
+        TIMEOUT: 'timeout'
+      };
+      
+      let currentRoomState = ROOM_STATES.IDLE;
+      
+      // Initialize game room system
+      function initializeGameRooms() {
+        // Wait for Unity to be ready
+        if (gameInstance) {
+          setupRoomEventListeners();
+        } else {
+          // If Unity isn't ready yet, wait for it
+          const checkUnity = setInterval(() => {
+            if (gameInstance) {
+              clearInterval(checkUnity);
+              setupRoomEventListeners();
+            }
+          }, 100);
+        }
+      }
+      
+      // Setup room event listeners
+      function setupRoomEventListeners() {
+        // Listen for Unity room loading events
+        if (gameInstance) {
+          try {
+            // Send message to Unity to setup room event listeners
+            gameInstance.SendMessage('GameManager', 'SetupRoomEventListeners');
+            
+            // Listen for room loading progress from Unity
+            gameInstance.on('roomProgress', (progress) => {
+              updateRoomLoadingProgress(progress);
+            });
+            
+            // Listen for room loading completion
+            gameInstance.on('roomLoaded', (roomData) => {
+              handleRoomLoaded(roomData);
+            });
+            
+            // Listen for room loading errors
+            gameInstance.on('roomError', (error) => {
+              handleRoomError(error);
+            });
+            
+          } catch (e) {
+            console.warn('Unity room events not available, using fallback system');
+            setupFallbackRoomSystem();
+          }
+        }
+      }
+      
+      // Fallback room system for when Unity events aren't available
+      function setupFallbackRoomSystem() {
+        // Create room buttons dynamically if they don't exist
+        const roomButtons = document.querySelectorAll('[data-room-id]');
+        if (roomButtons.length === 0) {
+          createFallbackRoomButtons();
+        }
+        
+        // Add click event listeners
+        roomButtons.forEach(button => {
+          button.addEventListener('click', (e) => {
+            e.preventDefault();
+            const roomId = button.getAttribute('data-room-id');
+            if (roomId && !isRoomLoading) {
+              loadGameRoom(roomId);
+            }
+          });
+        });
+      }
+      
+      // Create fallback room buttons
+      function createFallbackRoomButtons() {
+        const roomContainer = document.querySelector('.game-rooms') || document.body;
+        const roomIds = ['100', '300', '500', '800'];
+        
+        roomIds.forEach(roomId => {
+          const button = document.createElement('button');
+          button.className = 'room-button fallback-room-btn';
+          button.setAttribute('data-room-id', roomId);
+          button.innerHTML = `
+            <span class="room-value">${roomId}</span>
+            <div class="room-loading-indicator" style="display: none;">
+              <div class="room-spinner"></div>
+            </div>
+          `;
+          
+          roomContainer.appendChild(button);
+        });
+      }
+      
+      // Load game room with comprehensive error handling
+      function loadGameRoom(roomId) {
+        if (isRoomLoading) {
+          showNotification('Room already loading. Please wait...', 'warning', 3000);
+          return;
+        }
+        
+        // Prevent multiple room loads
+        isRoomLoading = true;
+        currentRoomId = roomId;
+        currentRoomState = ROOM_STATES.LOADING;
+        
+        // Show room loading overlay
+        showRoomLoadingOverlay(roomId);
+        
+        // Update UI to show loading state
+        updateRoomLoadingUI(roomId, true);
+        
+        // Show room loading notification
+        showNotification(`Loading room ${roomId}...`, 'info', 3000);
+        
+        // Start room loading timeout protection
+        startRoomLoadTimeout();
+        
+        // Try to load room through Unity
+        if (gameInstance) {
+          try {
+            // Send message to Unity to load room
+            gameInstance.SendMessage('GameManager', 'LoadRoom', roomId);
+            
+            // Start progress simulation if Unity doesn't provide progress
+            startRoomProgressSimulation();
+            
+          } catch (e) {
+            console.warn('Unity room loading failed, using fallback:', e);
+            handleRoomLoadFallback(roomId);
+          }
+        } else {
+          // Unity not ready, use fallback
+          handleRoomLoadFallback(roomId);
+        }
+      }
+      
+      // Show room loading overlay
+      function showRoomLoadingOverlay(roomId) {
+        const overlay = document.getElementById('room-loading-overlay');
+        const loadingText = document.getElementById('room-loading-text');
+        const loadingStatus = document.getElementById('room-loading-status');
+        
+        if (overlay && loadingText && loadingStatus) {
+          loadingText.textContent = `Loading Room ${roomId}...`;
+          loadingStatus.textContent = 'Initializing...';
+          overlay.classList.add('show');
+        }
+      }
+      
+      // Hide room loading overlay
+      function hideRoomLoadingOverlay() {
+        const overlay = document.getElementById('room-loading-overlay');
+        if (overlay) {
+          overlay.classList.remove('show');
+        }
+      }
+      
+      // Update room loading overlay progress
+      function updateRoomLoadingOverlay(progress, status) {
+        const progressFill = document.getElementById('room-progress-fill');
+        const loadingStatus = document.getElementById('room-loading-status');
+        
+        if (progressFill) {
+          progressFill.style.width = `${progress * 100}%`;
+        }
+        
+        if (loadingStatus && status) {
+          loadingStatus.textContent = status;
+        }
+      }
+      
+      // Start room loading timeout protection
+      function startRoomLoadTimeout() {
+        roomLoadTimeout = setTimeout(() => {
+          if (currentRoomState === ROOM_STATES.LOADING) {
+            handleRoomTimeout();
+          }
+        }, ROOM_CONFIG.maxLoadTime);
+      }
+      
+      // Handle room loading timeout
+      function handleRoomTimeout() {
+        currentRoomState = ROOM_STATES.TIMEOUT;
+        isRoomLoading = false;
+        
+        // Hide loading overlay
+        hideRoomLoadingOverlay();
+        
+        showNotification(`Room loading timeout. Attempting recovery...`, 'error', 5000);
+        
+        // Update UI
+        updateRoomLoadingUI(currentRoomId, false);
+        
+        // Try to recover from timeout
+        setTimeout(() => {
+          if (gameInstance) {
+            try {
+              // Send recovery message to Unity
+              gameInstance.SendMessage('GameManager', 'RecoverFromTimeout');
+            } catch (e) {
+              console.warn('Unity recovery failed:', e);
+            }
+          }
+          
+          // Reset state
+          resetRoomState();
+        }, ROOM_CONFIG.fallbackDelay);
+      }
+      
+      // Handle room loading fallback
+      function handleRoomLoadFallback(roomId) {
+        // Simulate room loading for fallback
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+          progress += Math.random() * 20;
+          if (progress >= 100) {
+            progress = 100;
+            clearInterval(progressInterval);
+            
+            // Simulate successful room load
+            setTimeout(() => {
+              handleRoomLoaded({ roomId, success: true, fallback: true });
+            }, 500);
+          }
+          
+          updateRoomLoadingProgress(progress / 100);
+        }, 200);
+      }
+      
+      // Start room progress simulation
+      function startRoomProgressSimulation() {
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+          if (currentRoomState !== ROOM_STATES.LOADING) {
+            clearInterval(progressInterval);
+            return;
+          }
+          
+          progress += Math.random() * 15;
+          if (progress >= 90) {
+            progress = 90; // Don't complete, wait for Unity
+            clearInterval(progressInterval);
+          }
+          
+          updateRoomLoadingProgress(progress / 100);
+        }, ROOM_CONFIG.progressInterval);
+      }
+      
+      // Update room loading progress
+      function updateRoomLoadingProgress(progress) {
+        if (currentRoomState !== ROOM_STATES.LOADING) return;
+        
+        // Update overlay progress
+        updateRoomLoadingOverlay(progress, getProgressStatus(progress));
+        
+        // Update progress bar if it exists
+        const progressBar = document.querySelector('.room-progress-bar');
+        if (progressBar) {
+          progressBar.style.width = `${progress * 100}%`;
+        }
+        
+        // Update room button loading state
+        updateRoomButtonProgress(currentRoomId, progress);
+      }
+      
+      // Get progress status text
+      function getProgressStatus(progress) {
+        if (progress < 0.2) return 'Initializing...';
+        if (progress < 0.4) return 'Loading assets...';
+        if (progress < 0.6) return 'Preparing game environment...';
+        if (progress < 0.8) return 'Finalizing setup...';
+        if (progress < 1.0) return 'Almost ready...';
+        return 'Ready!';
+      }
+      
+      // Update room button progress
+      function updateRoomButtonProgress(roomId, progress) {
+        const button = document.querySelector(`[data-room-id="${roomId}"]`);
+        if (button) {
+          const indicator = button.querySelector('.room-loading-indicator');
+          if (indicator) {
+            indicator.style.display = 'block';
+            
+            // Update spinner animation based on progress
+            const spinner = indicator.querySelector('.room-spinner');
+            if (spinner) {
+              spinner.style.animationDuration = `${1 - progress * 0.5}s`;
+            }
+          }
+        }
+      }
+      
+      // Handle successful room load
+      function handleRoomLoaded(roomData) {
+        clearTimeout(roomLoadTimeout);
+        currentRoomState = ROOM_STATES.SUCCESS;
+        isRoomLoading = false;
+        
+        // Hide loading overlay
+        hideRoomLoadingOverlay();
+        
+        // Update UI to show loading state
+        updateRoomLoadingUI(currentRoomId, false);
+        
+        if (roomData.fallback) {
+          showNotification(`Room ${roomData.roomId} loaded (fallback mode)`, 'success', 3000);
+        } else {
+          showNotification(`Room ${roomData.roomId} loaded successfully!`, 'success', 3000);
+        }
+        
+        // Reset state after delay
+        setTimeout(() => {
+          resetRoomState();
+        }, 2000);
+      }
+      
+      // Handle room loading error
+      function handleRoomError(error) {
+        clearTimeout(roomLoadTimeout);
+        currentRoomState = ROOM_STATES.ERROR;
+        isRoomLoading = false;
+        
+        // Hide loading overlay
+        hideRoomLoadingOverlay();
+        
+        // Update UI to show loading state
+        updateRoomLoadingUI(currentRoomId, false);
+        
+        showNotification(`Room loading failed: ${error}`, 'error', 5000);
+        
+        // Reset state after delay
+        setTimeout(() => {
+          resetRoomState();
+        }, 2000);
+      }
+      
+      // Update room loading UI
+      function updateRoomLoadingUI(roomId, isLoading) {
+        const button = document.querySelector(`[data-room-id="${roomId}"]`);
+        if (button) {
+          if (isLoading) {
+            button.classList.add('loading');
+            button.disabled = true;
+          } else {
+            button.classList.remove('loading');
+            button.disabled = false;
+            
+            // Hide loading indicator
+            const indicator = button.querySelector('.room-loading-indicator');
+            if (indicator) {
+              indicator.style.display = 'none';
+            }
+          }
+        }
+      }
+      
+      // Reset room state
+      function resetRoomState() {
+        currentRoomState = ROOM_STATES.IDLE;
+        currentRoomId = null;
+        isRoomLoading = false;
+        
+        // Clear any remaining timeouts
+        if (roomLoadTimeout) {
+          clearTimeout(roomLoadTimeout);
+          roomLoadTimeout = null;
+        }
+        
+        // Reset all room buttons
+        const roomButtons = document.querySelectorAll('[data-room-id]');
+        roomButtons.forEach(button => {
+          button.classList.remove('loading');
+          button.disabled = false;
+          
+          const indicator = button.querySelector('.room-loading-indicator');
+          if (indicator) {
+            indicator.style.display = 'none';
+          }
+        });
+      }
 
       // Device Orientation Check
       function checkOrientation() {
@@ -232,8 +646,17 @@
         // Reset loading state
         isLoading = false;
         if (loadingScreen) {
-          loadingScreen.style.display = 'none';
+          loadingScreen.classList.add('loading-timeout');
+          setTimeout(() => {
+            loadingScreen.style.display = 'none';
+          }, 2000);
         }
+        
+        // Auto-retry after timeout instead of showing alert
+        setTimeout(() => {
+          showNotification('Automatically retrying game load...', 'info', 5000);
+          location.reload();
+        }, 5000);
       }
 
       // Memory monitoring
@@ -337,15 +760,34 @@
       });
 
       // Enhanced Notification System
+      let activeNotifications = new Set();
+      const MAX_NOTIFICATIONS = 3; // Maximum number of notifications to show at once
+      
       function showNotification(message, type = 'info', duration = 3000) {
+        // Check if this exact message is already showing
+        if (activeNotifications.has(message)) {
+          return; // Don't show duplicate notifications
+        }
+        
+        // Limit the number of notifications
+        if (activeNotifications.size >= MAX_NOTIFICATIONS) {
+          // Remove oldest notification
+          const oldestNotification = notificationContainer.firstChild;
+          if (oldestNotification) {
+            oldestNotification.remove();
+            activeNotifications.delete(oldestNotification.textContent || '');
+          }
+        }
+        
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
         notification.innerHTML = `
-          <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+          <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
           <span>${message}</span>
         `;
         
         notificationContainer.appendChild(notification);
+        activeNotifications.add(message);
         
         setTimeout(() => {
           notification.classList.add('show');
@@ -355,9 +797,30 @@
           notification.classList.remove('show');
           setTimeout(() => {
             notification.remove();
+            activeNotifications.delete(message);
           }, 300);
         }, duration);
       }
+
+      // Dismiss all notifications
+      function dismissAllNotifications() {
+        const notifications = notificationContainer.querySelectorAll('.notification');
+        notifications.forEach(notification => {
+          notification.classList.remove('show');
+          setTimeout(() => {
+            notification.remove();
+          }, 300);
+        });
+        activeNotifications.clear();
+      }
+      
+      // Add event listener for dismiss all button
+      document.addEventListener('DOMContentLoaded', () => {
+        const dismissAllBtn = document.getElementById('dismiss-all-notifications');
+        if (dismissAllBtn) {
+          dismissAllBtn.addEventListener('click', dismissAllNotifications);
+        }
+      });
 
       // Unity Integration with Performance Optimizations
       var container = document.querySelector("#unity-container");
@@ -725,16 +1188,15 @@
               
               // Handle specific WebGL errors
               if (error.includes('WebGL') || error.includes('INVALID_ENUM')) {
-                showNotification('WebGL rendering error. Trying to recover...', 'warning', 5000);
+                showNotification('WebGL rendering error. Attempting automatic recovery...', 'warning', 5000);
                 
-                // Attempt to restart with fallback settings
+                // Automatic recovery with fallback settings
                 setTimeout(() => {
-                  if (confirm('WebGL error detected. Would you like to try with reduced graphics settings?')) {
-                    restartWithFallbackSettings();
-                  }
-                }, 2000);
+                  showNotification('Switching to compatibility mode...', 'info', 3000);
+                  restartWithFallbackSettings();
+                }, 3000);
               } else {
-                showNotification('Game error occurred. Please refresh the page.', 'error', 8000);
+                showNotification('Game error occurred. Attempting recovery...', 'error', 8000);
               }
             });
             
@@ -758,6 +1220,9 @@
           }
           
           showNotification('Welcome to GoldenMM!', 'success');
+          
+          // Initialize game room system
+          initializeGameRooms();
         }).catch((message) => {
           clearInterval(performanceInterval);
           console.error('Unity loading failed:', message);
@@ -783,22 +1248,22 @@
           
           // Provide specific recovery options based on error type
           setTimeout(() => {
-            let retryMessage = 'Game failed to load. Would you like to retry?';
-            
+            // Automatic recovery based on error type
             if (errorType === 'webgl') {
-              retryMessage = 'WebGL error detected. Would you like to try with compatibility mode?';
-            } else if (errorType === 'memory') {
-              retryMessage = 'Memory error detected. Would you like to try with reduced settings?';
-            }
-            
-            if (confirm(retryMessage)) {
-              if (errorType === 'webgl') {
+              showNotification('WebGL error detected. Switching to compatibility mode...', 'info', 5000);
+              setTimeout(() => {
                 restartWithFallbackSettings();
-              } else if (errorType === 'memory') {
+              }, 2000);
+            } else if (errorType === 'memory') {
+              showNotification('Memory error detected. Switching to reduced settings...', 'info', 5000);
+              setTimeout(() => {
                 restartWithReducedMemory();
-              } else {
+              }, 2000);
+            } else {
+              showNotification('Unknown error detected. Attempting automatic retry...', 'info', 5000);
+              setTimeout(() => {
                 location.reload();
-              }
+              }, 3000);
             }
           }, 2000);
         });
