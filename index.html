@@ -6,6 +6,8 @@
     <title>Unity WebGL Player | GoldenMM</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
+    <!-- Unity WebGL Compatibility Fixer -->
+    <script src="unity-fix.js"></script>
   </head>
   <body>
     <div id="rotate-message" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; color: white; font-size: 24px; text-align: center; display: flex; justify-content: center; align-items: center; z-index: 9999;">
@@ -29,6 +31,23 @@
     </div>
     
     <script>
+      // Enhanced error handling and Unity WebGL compatibility
+      window.addEventListener('error', function(e) {
+        console.error('Global error caught:', e.error);
+        if (e.error && e.error.message && e.error.message.includes('wasm')) {
+          unityShowBanner('WebAssembly Error: ' + e.error.message, 'error');
+        }
+      });
+
+      // Memory management for WebAssembly
+      if (typeof WebAssembly !== 'undefined') {
+        WebAssembly.instantiateStreaming = WebAssembly.instantiateStreaming || function(resp, importObject) {
+          return resp.arrayBuffer().then(function(bytes) {
+            return WebAssembly.instantiate(bytes, importObject);
+          });
+        };
+      }
+
       function checkOrientation() {
         var message = document.getElementById("rotate-message");
         if (window.innerHeight > window.innerWidth) {
@@ -73,11 +92,33 @@
         dataUrl: buildUrl + "/SKMWebDelight.data",
         frameworkUrl: buildUrl + "/SKMWebDelight.framework.js",
         codeUrl: buildUrl + "/SKMWebDelight.wasm",
-        streamingAssetsUrl: "StreamingAssets",
+        streamingAssetsUrl: "", // Remove StreamingAssets reference
         companyName: "Delight",
         productName: "GoldenMM",
         productVersion: "1.0.3",
         showBanner: unityShowBanner,
+        // Enhanced WebGL configuration
+        webglContextAttributes: {
+          preserveDrawingBuffer: false,
+          powerPreference: "high-performance",
+          antialias: false, // Disable antialiasing for better performance
+          depth: true,
+          stencil: false,
+          alpha: false
+        },
+        // Memory management
+        memorySize: 512, // 512MB memory allocation
+        // Error handling
+        onError: function(message) {
+          console.error("Unity WebGL Error:", message);
+          unityShowBanner("Unity WebGL Error: " + message, "error");
+        },
+        // Startup error handler
+        startupErrorHandler: function(message, source, lineno) {
+          console.error("Unity Startup Error:", message, "at", source, ":", lineno);
+          unityShowBanner("Unity Startup Error: " + message, "error");
+          loadingBar.style.display = "none";
+        }
       };
 
       if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
@@ -94,22 +135,58 @@
 
       loadingBar.style.display = "block";
 
-      var script = document.createElement("script");
-      script.src = loaderUrl;
-      script.onload = () => {
-        createUnityInstance(canvas, config, (progress) => {
-          progressBarFull.style.width = 100 * progress + "%";
-        }).then((unityInstance) => {
-          loadingBar.style.display = "none";
-          fullscreenButton.onclick = () => {
-            unityInstance.SetFullscreen(1);
-          };
-        }).catch((message) => {
-          alert(message);
-        });
-      };
+      // Enhanced script loading with retry mechanism
+      function loadUnityScript(retryCount = 0) {
+        var script = document.createElement("script");
+        script.src = loaderUrl;
+        
+        script.onload = () => {
+          try {
+            if (typeof createUnityInstance === 'function') {
+              createUnityInstance(canvas, config, (progress) => {
+                progressBarFull.style.width = 100 * progress + "%";
+              }).then((unityInstance) => {
+                loadingBar.style.display = "none";
+                fullscreenButton.onclick = () => {
+                  unityInstance.SetFullscreen(1);
+                };
+                console.log("Unity WebGL instance created successfully");
+              }).catch((message) => {
+                console.error("Unity initialization failed:", message);
+                unityShowBanner("Unity initialization failed: " + message, "error");
+                loadingBar.style.display = "none";
+                
+                // Try to provide more specific error information
+                if (message.includes('wasm')) {
+                  unityShowBanner("WebAssembly Error: Try refreshing the page or check browser compatibility", "error");
+                }
+              });
+            } else {
+              throw new Error("createUnityInstance function not found");
+            }
+          } catch (error) {
+            console.error("Error in Unity script execution:", error);
+            unityShowBanner("Unity script execution error: " + error.message, "error");
+            loadingBar.style.display = "none";
+          }
+        };
+        
+        script.onerror = () => {
+          console.error("Failed to load Unity loader script");
+          if (retryCount < 3) {
+            console.log(`Retrying... Attempt ${retryCount + 1}/3`);
+            setTimeout(() => loadUnityScript(retryCount + 1), 1000);
+          } else {
+            unityShowBanner("Failed to load Unity loader script after 3 attempts", "error");
+            loadingBar.style.display = "none";
+          }
+        };
+        
+        document.body.appendChild(script);
+      }
       
-      document.body.appendChild(script);
+      // Start loading Unity
+      loadUnityScript();
     </script>
   </body>
 </html>

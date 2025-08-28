@@ -1,0 +1,33 @@
+# Unity WebGL specific
+*.log
+*.tmp
+*.temp
+
+# Development files
+node_modules/
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build artifacts (keep Unity build files)
+# Build/
+# TemplateData/
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Cache files
+.cache/
+*.cache
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
