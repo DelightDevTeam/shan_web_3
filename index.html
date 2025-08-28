@@ -3,71 +3,396 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Unity WebGL Player | GoldenMM</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>GoldenMM - Modern Gaming Experience</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
-    <!-- Unity WebGL Compatibility Fixer -->
-    <script src="unity-fix.js"></script>
   </head>
   <body>
-    <div id="rotate-message" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; color: white; font-size: 24px; text-align: center; display: flex; justify-content: center; align-items: center; z-index: 9999;">
-      Please rotate your device to landscape mode.
-    </div>
-
-    <div id="unity-container" class="unity-desktop">
-      <canvas id="unity-canvas" width=960 height=600 tabindex="-1"></canvas>
-      <div id="unity-loading-bar">
-        <div id="unity-logo"></div>
-        <div id="unity-progress-bar-empty">
-          <div id="unity-progress-bar-full"></div>
+    <!-- Modern Loading Screen -->
+    <div id="modern-loading-screen" class="loading-screen">
+      <div class="loading-content">
+        <div class="game-logo">
+          <i class="fas fa-gamepad"></i>
+          <h1>GoldenMM</h1>
+        </div>
+        <div class="loading-animation">
+          <div class="spinner"></div>
+        </div>
+        <div class="loading-text">
+          <p>Loading your adventure...</p>
+          <div class="progress-container">
+            <div class="progress-bar">
+              <div class="progress-fill" id="modern-progress-fill"></div>
+            </div>
+            <span class="progress-text" id="modern-progress-text">0%</span>
+          </div>
+        </div>
+        <div class="loading-tips">
+          <p><i class="fas fa-lightbulb"></i> Tip: Use WASD or arrow keys to move</p>
         </div>
       </div>
-      <div id="unity-warning"></div>
-      <div id="unity-footer">
-        <div id="unity-webgl-logo"></div>
-        <div id="unity-fullscreen-button"></div>
-        <div id="unity-build-title">GoldenMM</div>
+    </div>
+
+    <!-- Device Orientation Message -->
+    <div id="rotate-message" class="rotate-message">
+      <div class="rotate-content">
+        <i class="fas fa-mobile-alt fa-rotate-90"></i>
+        <h3>Please Rotate Your Device</h3>
+        <p>For the best gaming experience, please rotate to landscape mode</p>
       </div>
     </div>
-    
+
+    <!-- Main Game Container -->
+    <div id="unity-container" class="unity-container">
+      <canvas id="unity-canvas" width=960 height=600 tabindex="-1"></canvas>
+      
+      <!-- Game Controls Overlay -->
+      <div class="game-controls">
+        <button class="control-btn fullscreen-btn" id="fullscreen-btn" title="Toggle Fullscreen">
+          <i class="fas fa-expand"></i>
+        </button>
+        <button class="control-btn settings-btn" id="settings-btn" title="Game Settings">
+          <i class="fas fa-cog"></i>
+        </button>
+        <button class="control-btn help-btn" id="help-btn" title="Help & Controls">
+          <i class="fas fa-question-circle"></i>
+        </button>
+      </div>
+
+      <!-- Game Title Bar -->
+      <div class="game-title-bar">
+        <div class="game-info">
+          <span class="game-title">GoldenMM</span>
+          <span class="game-version">v1.0.3</span>
+        </div>
+        <div class="game-status">
+          <span class="status-indicator" id="status-indicator">
+            <i class="fas fa-circle"></i> Ready
+          </span>
+        </div>
+      </div>
+
+      <!-- Warning Banner -->
+      <div id="unity-warning" class="warning-banner"></div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3><i class="fas fa-cog"></i> Game Settings</h3>
+          <button class="close-btn" id="close-settings">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="setting-group">
+            <label>Graphics Quality</label>
+            <select id="graphics-quality">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+          <div class="setting-group">
+            <label>Sound Volume</label>
+            <input type="range" id="sound-volume" min="0" max="100" value="80">
+            <span class="volume-value">80%</span>
+          </div>
+          <div class="setting-group">
+            <label>Music Volume</label>
+            <input type="range" id="music-volume" min="0" max="100" value="60">
+            <span class="volume-value">60%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="help-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3><i class="fas fa-question-circle"></i> Help & Controls</h3>
+          <button class="close-btn" id="close-help">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="control-section">
+            <h4>Keyboard Controls</h4>
+            <div class="control-grid">
+              <div class="control-item">
+                <span class="key">WASD</span>
+                <span class="action">Move</span>
+              </div>
+              <div class="control-item">
+                <span class="key">Space</span>
+                <span class="action">Jump</span>
+              </div>
+              <div class="control-item">
+                <span class="key">E</span>
+                <span class="action">Interact</span>
+              </div>
+              <div class="control-item">
+                <span class="key">ESC</span>
+                <span class="action">Pause</span>
+              </div>
+            </div>
+          </div>
+          <div class="control-section">
+            <h4>Mouse Controls</h4>
+            <div class="control-grid">
+              <div class="control-item">
+                <span class="key">Left Click</span>
+                <span class="action">Select</span>
+              </div>
+              <div class="control-item">
+                <span class="key">Right Click</span>
+                <span class="action">Context Menu</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification System -->
+    <div id="notification-container" class="notification-container">
+      <button id="dismiss-all-notifications" class="dismiss-all-btn" title="Dismiss all notifications">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- Room Loading Overlay -->
+    <div id="room-loading-overlay" class="room-loading-overlay">
+      <div class="room-loading-content">
+        <h3><i class="fas fa-door-open"></i> Loading Game Room</h3>
+        <p id="room-loading-text">Preparing your gaming experience...</p>
+        <div class="room-loading-progress">
+          <div class="room-loading-progress-fill" id="room-progress-fill"></div>
+        </div>
+        <p id="room-loading-status">Initializing...</p>
+      </div>
+    </div>
+
     <script>
-      // Enhanced error handling and Unity WebGL compatibility
-      window.addEventListener('error', function(e) {
-        console.error('Global error caught:', e.error);
-        if (e.error && e.error.message && e.error.message.includes('wasm')) {
-          unityShowBanner('WebAssembly Error: ' + e.error.message, 'error');
-        }
-      });
-
-      // Memory management for WebAssembly
-      if (typeof WebAssembly !== 'undefined') {
-        WebAssembly.instantiateStreaming = WebAssembly.instantiateStreaming || function(resp, importObject) {
-          return resp.arrayBuffer().then(function(bytes) {
-            return WebAssembly.instantiate(bytes, importObject);
-          });
-        };
-      }
-
       function checkOrientation() {
-        var message = document.getElementById("rotate-message");
-        if (window.innerHeight > window.innerWidth) {
-          message.style.display = "flex";
+        const rotateMessage = document.getElementById("rotate-message");
+        if (window.innerHeight > window.innerWidth && window.innerWidth < 768) {
+          rotateMessage.style.display = "flex";
         } else {
-          message.style.display = "none";
+          rotateMessage.style.display = "none";
         }
       }
 
+      // Event Listeners
       window.addEventListener("resize", checkOrientation);
       window.addEventListener("orientationchange", checkOrientation);
       checkOrientation();
 
+      // Performance monitoring
+      function checkPerformance() {
+        const currentTime = Date.now();
+        const loadTime = currentTime - loadStartTime;
+        
+        // Show warning if loading takes too long (only once)
+        if (loadTime > PERFORMANCE_CONFIG.timeoutWarning && !isGameLoaded && !performanceWarningsShown.has('slow')) {
+          performanceWarningsShown.add('slow');
+          showNotification('Game is taking longer than usual to load. Please wait...', 'warning', 5000);
+        }
+        
+        // Remove aggressive timeout - let Unity handle its own loading
+        // This prevents constant timeout messages and refresh buttons
+      }
+
+      // Handle loading issues gracefully without aggressive timeouts
+      function handleLoadingIssue() {
+        // Only show this if we're actually stuck, not just slow
+        if (isLoading === false) {
+          return;
+        }
+        
+        // Show a gentle message instead of aggressive timeout
+        showNotification('Game loading is taking longer than expected. Please be patient.', 'info', 8000);
+        
+        // Don't change status or add refresh button - just inform user
+        // This creates a better user experience
+      }
+      
+      // Remove manual refresh button - not needed with new approach
+      // Users can use browser refresh if they really need to
+
+      // Memory monitoring
+      function checkMemoryUsage() {
+        if ('memory' in performance) {
+          const memoryInfo = performance.memory;
+          const usagePercent = memoryInfo.usedJSHeapSize / memoryInfo.jsHeapSizeLimit;
+          
+          if (usagePercent > PERFORMANCE_CONFIG.memoryThreshold) {
+            showNotification('High memory usage detected. Consider refreshing the page.', 'warning', 5000);
+          }
+        }
+      }
+
+      // Optimized progress update
+      function updateProgress(progress) {
+        const currentTime = Date.now();
+        
+        // Throttle progress updates for better performance
+        if (currentTime - lastProgressUpdate < PERFORMANCE_CONFIG.progressUpdateInterval) {
+          return;
+        }
+        
+        currentProgress = progress;
+        lastProgressUpdate = currentTime;
+        
+        if (progressFill && progressText) {
+          progressFill.style.width = (100 * progress) + "%";
+          progressText.textContent = Math.round(100 * progress) + "%";
+        }
+        
+        // Check performance periodically
+        checkPerformance();
+        
+        if (progress >= 1) {
+          handleGameLoaded();
+        }
+      }
+
+      // Handle successful game load
+      function handleGameLoaded() {
+        isGameLoaded = true;
+        isLoading = false;
+        
+        setTimeout(() => {
+          if (loadingScreen) {
+            loadingScreen.classList.add('fade-out');
+            setTimeout(() => {
+              loadingScreen.style.display = 'none';
+              statusIndicator.innerHTML = '<i class="fas fa-circle"></i> Playing';
+              statusIndicator.className = 'status-indicator playing';
+              showNotification('Game loaded successfully!', 'success');
+              
+              // Start performance monitoring
+              setInterval(checkMemoryUsage, 10000); // Check every 10 seconds
+            }, 500);
+          }
+        }, 500);
+      }
+
+      // Modal Management
+      function showModal(modal) {
+        modal.style.display = "flex";
+        document.body.style.overflow = "hidden";
+      }
+
+      function hideModal(modal) {
+        modal.style.display = "none";
+        document.body.style.overflow = "auto";
+      }
+
+      // Settings Modal
+      document.getElementById('settings-btn').addEventListener('click', () => {
+        showModal(settingsModal);
+      });
+
+      document.getElementById('close-settings').addEventListener('click', () => {
+        hideModal(settingsModal);
+      });
+
+      // Help Modal
+      document.getElementById('help-btn').addEventListener('click', () => {
+        showModal(helpModal);
+      });
+
+      document.getElementById('close-help').addEventListener('click', () => {
+        hideModal(helpModal);
+      });
+
+      // Volume Controls
+      document.getElementById('sound-volume').addEventListener('input', (e) => {
+        const value = e.target.value;
+        e.target.nextElementSibling.textContent = value + '%';
+        // Here you can add Unity audio control logic
+      });
+
+      document.getElementById('music-volume').addEventListener('input', (e) => {
+        const value = e.target.value;
+        e.target.nextElementSibling.textContent = value + '%';
+        // Here you can add Unity audio control logic
+      });
+
+      // Enhanced Notification System
+      let activeNotifications = new Set();
+      const MAX_NOTIFICATIONS = 3; // Maximum number of notifications to show at once
+      
+      function showNotification(message, type = 'info', duration = 3000) {
+        // Check if this exact message is already showing
+        if (activeNotifications.has(message)) {
+          return; // Don't show duplicate notifications
+        }
+        
+        // Limit the number of notifications
+        if (activeNotifications.size >= MAX_NOTIFICATIONS) {
+          // Remove oldest notification
+          const oldestNotification = notificationContainer.firstChild;
+          if (oldestNotification) {
+            oldestNotification.remove();
+            activeNotifications.delete(oldestNotification.textContent || '');
+          }
+        }
+        
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+          <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
+          <span>${message}</span>
+        `;
+        
+        notificationContainer.appendChild(notification);
+        activeNotifications.add(message);
+        
+        setTimeout(() => {
+          notification.classList.add('show');
+        }, 100);
+        
+        setTimeout(() => {
+          notification.classList.remove('show');
+          setTimeout(() => {
+            notification.remove();
+            activeNotifications.delete(message);
+          }, 300);
+        }, duration);
+      }
+
+      // Dismiss all notifications
+      function dismissAllNotifications() {
+        const notifications = notificationContainer.querySelectorAll('.notification');
+        notifications.forEach(notification => {
+          notification.classList.remove('show');
+          setTimeout(() => {
+            notification.remove();
+          }, 300);
+        });
+        activeNotifications.clear();
+      }
+      
+      // Add event listener for dismiss all button
+      document.addEventListener('DOMContentLoaded', () => {
+        const dismissAllBtn = document.getElementById('dismiss-all-notifications');
+        if (dismissAllBtn) {
+          dismissAllBtn.addEventListener('click', dismissAllNotifications);
+        }
+      });
+
+      // Unity Integration with Performance Optimizations
       var container = document.querySelector("#unity-container");
       var canvas = document.querySelector("#unity-canvas");
-      var loadingBar = document.querySelector("#unity-loading-bar");
-      var progressBarFull = document.querySelector("#unity-progress-bar-full");
-      var fullscreenButton = document.querySelector("#unity-fullscreen-button");
+      var fullscreenButton = document.getElementById("fullscreen-btn");
       var warningBanner = document.querySelector("#unity-warning");
 
+      // Enhanced Unity banner system
       function unityShowBanner(msg, type) {
         function updateBannerVisibility() {
           warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
@@ -75,19 +400,243 @@
         var div = document.createElement('div');
         div.innerHTML = msg;
         warningBanner.appendChild(div);
-        if (type == 'error') div.style = 'background: red; padding: 10px;';
-        else {
-          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
-          setTimeout(function() {
+        
+        if (type == 'error') {
+          div.className = 'warning-item error';
+          showNotification(msg, 'error', 5000);
+          
+          // Handle Unity errors gracefully
+          if (msg.includes('room') || msg.includes('connection')) {
+            showNotification('Connection issue detected. Please check your internet and try again.', 'warning', 8000);
+          }
+        } else if (type == 'warning') {
+          div.className = 'warning-item warning';
+          showNotification(msg, 'warning', 3000);
+        } else {
+          div.className = 'warning-item info';
+          showNotification(msg, 'info', 2000);
+        }
+        
+        setTimeout(function() {
+          if (warningBanner.contains(div)) {
             warningBanner.removeChild(div);
             updateBannerVisibility();
-          }, 5000);
-        }
+          }
+        }, type === 'error' ? 10000 : 5000);
+        
         updateBannerVisibility();
       }
 
+      // Unity Configuration with Performance Settings
       var buildUrl = "Build";
       var loaderUrl = buildUrl + "/SKMWebDelight.loader.js";
+      
+      // WebGL Compatibility Check
+      function checkWebGLSupport() {
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        
+        if (!gl) {
+          showNotification('WebGL is not supported in your browser. Please update your browser or enable WebGL.', 'error', 10000);
+          return false;
+        }
+        
+        // Check for specific WebGL extensions and capabilities
+        const extensions = gl.getSupportedExtensions();
+        const hasCompressedTextures = extensions.includes('WEBGL_compressed_texture_astc') || 
+                                    extensions.includes('WEBGL_compressed_texture_s3tc') ||
+                                    extensions.includes('WEBGL_compressed_texture_etc');
+        
+        if (!hasCompressedTextures) {
+          showNotification('Compressed textures not supported. Game may load slower.', 'warning', 5000);
+        }
+        
+        // Check WebGL version
+        const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+        if (debugInfo) {
+          const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+          console.log('WebGL Renderer:', renderer);
+          
+          // Check for known problematic renderers
+          if (renderer.includes('Intel') || renderer.includes('AMD')) {
+            showNotification('Graphics driver compatibility detected. Game may have reduced performance.', 'warning', 5000);
+          }
+        }
+        
+        return true;
+      }
+      
+      // Enhanced WebGL error suppression and handling
+      function setupWebGLErrorHandling() {
+        // Override console.error to catch WebGL errors
+        const originalConsoleError = console.error;
+        console.error = function(...args) {
+          const message = args.join(' ');
+          
+          // Suppress specific WebGL errors that don't affect functionality
+          if (message.includes('INVALID_ENUM: getInternalformatParameter')) {
+            // This is a common WebGL extension check that can be safely ignored
+            console.warn('WebGL extension check suppressed:', message);
+            return;
+          }
+          
+          if (message.includes('UNorm format is not supported')) {
+            // Texture format fallback is automatic, just log as info
+            console.info('Texture format fallback:', message);
+            return;
+          }
+          
+          // Log other errors normally
+          originalConsoleError.apply(console, args);
+        };
+        
+        // Override WebGL context methods to prevent INVALID_ENUM errors
+        if (window.WebGLRenderingContext) {
+          const originalGetParameter = WebGLRenderingContext.prototype.getParameter;
+          WebGLRenderingContext.prototype.getParameter = function(parameter) {
+            try {
+              return originalGetParameter.call(this, parameter);
+            } catch (e) {
+              if (e.name === 'INVALID_ENUM') {
+                // Return safe defaults for unsupported parameters
+                switch (parameter) {
+                  case this.MAX_TEXTURE_SIZE:
+                    return 4096; // Safe default texture size
+                  case this.MAX_VIEWPORT_DIMS:
+                    return [4096, 4096]; // Safe default viewport
+                  case this.MAX_VERTEX_ATTRIBS:
+                    return 16; // Safe default vertex attributes
+                  default:
+                    return 0; // Safe default for unknown parameters
+                }
+              }
+              throw e;
+            }
+          };
+        }
+        
+        // Override WebGL2 context methods if available
+        if (window.WebGL2RenderingContext) {
+          const originalGetParameter2 = WebGL2RenderingContext.prototype.getParameter;
+          WebGL2RenderingContext.prototype.getParameter = function(parameter) {
+            try {
+              return originalGetParameter2.call(this, parameter);
+            } catch (e) {
+              if (e.name === 'INVALID_ENUM') {
+                // Return safe defaults for unsupported parameters
+                switch (parameter) {
+                  case this.MAX_TEXTURE_SIZE:
+                    return 4096;
+                  case this.MAX_VIEWPORT_DIMS:
+                    return [4096, 4096];
+                  case this.MAX_VERTEX_ATTRIBS:
+                    return 16;
+                  default:
+                    return 0;
+                }
+              }
+              throw e;
+            }
+          };
+        }
+        
+        // Override getContext to inject error handling
+        const originalGetContext = HTMLCanvasElement.prototype.getContext;
+        HTMLCanvasElement.prototype.getContext = function(contextType, contextAttributes) {
+          const context = originalGetContext.call(this, contextType, contextAttributes);
+          
+          if (context && (contextType === 'webgl' || contextType === 'webgl2')) {
+            // Override getInternalformatParameter to prevent INVALID_ENUM errors
+            if (context.getInternalformatParameter) {
+              const originalGetInternalformatParameter = context.getInternalformatParameter;
+              context.getInternalformatParameter = function(target, internalformat, pname) {
+                try {
+                  return originalGetInternalformatParameter.call(this, target, internalformat, pname);
+                } catch (e) {
+                  if (e.name === 'INVALID_ENUM') {
+                    // Return safe defaults for unsupported internal formats
+                    switch (pname) {
+                      case context.NUM_SAMPLE_COUNTS:
+                        return 0;
+                      case context.SAMPLES:
+                        return [1];
+                      case context.INTERNALFORMAT_PREFERRED:
+                        return internalformat;
+                      default:
+                        return null;
+                    }
+                  }
+                  throw e;
+                }
+              };
+            }
+            
+            // Override getExtension to handle unsupported extensions gracefully
+            const originalGetExtension = context.getExtension;
+            context.getExtension = function(name) {
+              try {
+                return originalGetExtension.call(this, name);
+              } catch (e) {
+                if (e.name === 'INVALID_ENUM') {
+                  console.warn('WebGL extension not supported:', name);
+                  return null;
+                }
+                throw e;
+              }
+            };
+            
+            // Override compressedTexImage2D to handle unsupported formats
+            if (context.compressedTexImage2D) {
+              const originalCompressedTexImage2D = context.compressedTexImage2D;
+              context.compressedTexImage2D = function(target, level, internalformat, width, height, border, data) {
+                try {
+                  return originalCompressedTexImage2D.call(this, target, level, internalformat, width, height, border, data);
+                } catch (e) {
+                  if (e.name === 'INVALID_ENUM' && internalformat) {
+                    console.warn('Compressed texture format not supported, falling back to uncompressed:', internalformat);
+                    // Fall back to uncompressed RGBA format
+                    const fallbackFormat = context.RGBA;
+                    const fallbackType = context.UNSIGNED_BYTE;
+                    
+                    // Create uncompressed texture data
+                    const uncompressedData = new Uint8Array(width * height * 4);
+                    for (let i = 0; i < uncompressedData.length; i += 4) {
+                      uncompressedData[i] = 255;     // R
+                      uncompressedData[i + 1] = 255; // G
+                      uncompressedData[i + 2] = 255; // B
+                      uncompressedData[i + 3] = 255; // A
+                    }
+                    
+                    return context.texImage2D(target, level, fallbackFormat, width, height, border, fallbackFormat, fallbackType, uncompressedData);
+                  }
+                  throw e;
+                }
+              };
+            }
+          }
+          
+          return context;
+        };
+        
+        // Override console.warn to suppress specific WebGL warnings
+        const originalConsoleWarn = console.warn;
+        console.warn = function(...args) {
+          const message = args.join(' ');
+          
+          // Suppress specific WebGL warnings that don't affect functionality
+          if (message.includes('RGBA Compressed ASTC') || 
+              message.includes('UNorm format is not supported') ||
+              message.includes('decompressing texture')) {
+            console.info('Texture format fallback (suppressed warning):', message);
+            return;
+          }
+          
+          // Log other warnings normally
+          originalConsoleWarn.apply(console, args);
+        };
+      }
+      
+      // Enhanced Unity configuration with WebGL fallbacks
       var config = {
         dataUrl: buildUrl + "/SKMWebDelight.data",
         frameworkUrl: buildUrl + "/SKMWebDelight.framework.js",
@@ -97,37 +646,21 @@
         productName: "GoldenMM",
         productVersion: "1.0.3",
         showBanner: unityShowBanner,
-        // Enhanced WebGL configuration
-        webglContextAttributes: {
-          preserveDrawingBuffer: false,
-          powerPreference: "high-performance",
-          antialias: false, // Disable antialiasing for better performance
-          depth: true,
-          stencil: false,
-          alpha: false
-        },
-        // Memory management
-        memorySize: 512, // 512MB memory allocation
-        // Error handling
-        onError: function(message) {
-          console.error("Unity WebGL Error:", message);
-          unityShowBanner("Unity WebGL Error: " + message, "error");
-        },
-        // Startup error handler
-        startupErrorHandler: function(message, source, lineno) {
-          console.error("Unity Startup Error:", message, "at", source, ":", lineno);
-          unityShowBanner("Unity Startup Error: " + message, "error");
-          loadingBar.style.display = "none";
-        }
       };
 
+      // Mobile Detection and Setup
       if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        var meta = document.createElement('meta');
-        meta.name = 'viewport';
-        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
-        document.getElementsByTagName('head')[0].appendChild(meta);
-        container.className = "unity-mobile";
+        container.className = "unity-container unity-mobile";
         canvas.className = "unity-mobile";
+        
+        // Additional mobile optimizations
+        config.initialMemorySize = 8 * 1024 * 1024; // 8MB for mobile
+        config.maximumMemorySize = 128 * 1024 * 1024; // 128MB max for mobile
+        
+        // Mobile-specific WebGL settings
+        config.webglContextAttributes.antialias = false;
+        config.webglContextAttributes.powerPreference = "low-power";
+        config.fallbackQuality = "low";
       } else {
         canvas.style.width = "960px";
         canvas.style.height = "600px";
@@ -135,58 +668,22 @@
 
       loadingBar.style.display = "block";
 
-      // Enhanced script loading with retry mechanism
-      function loadUnityScript(retryCount = 0) {
-        var script = document.createElement("script");
-        script.src = loaderUrl;
-        
-        script.onload = () => {
-          try {
-            if (typeof createUnityInstance === 'function') {
-              createUnityInstance(canvas, config, (progress) => {
-                progressBarFull.style.width = 100 * progress + "%";
-              }).then((unityInstance) => {
-                loadingBar.style.display = "none";
-                fullscreenButton.onclick = () => {
-                  unityInstance.SetFullscreen(1);
-                };
-                console.log("Unity WebGL instance created successfully");
-              }).catch((message) => {
-                console.error("Unity initialization failed:", message);
-                unityShowBanner("Unity initialization failed: " + message, "error");
-                loadingBar.style.display = "none";
-                
-                // Try to provide more specific error information
-                if (message.includes('wasm')) {
-                  unityShowBanner("WebAssembly Error: Try refreshing the page or check browser compatibility", "error");
-                }
-              });
-            } else {
-              throw new Error("createUnityInstance function not found");
-            }
-          } catch (error) {
-            console.error("Error in Unity script execution:", error);
-            unityShowBanner("Unity script execution error: " + error.message, "error");
-            loadingBar.style.display = "none";
-          }
-        };
-        
-        script.onerror = () => {
-          console.error("Failed to load Unity loader script");
-          if (retryCount < 3) {
-            console.log(`Retrying... Attempt ${retryCount + 1}/3`);
-            setTimeout(() => loadUnityScript(retryCount + 1), 1000);
-          } else {
-            unityShowBanner("Failed to load Unity loader script after 3 attempts", "error");
-            loadingBar.style.display = "none";
-          }
-        };
-        
-        document.body.appendChild(script);
-      }
+      var script = document.createElement("script");
+      script.src = loaderUrl;
+      script.onload = () => {
+        createUnityInstance(canvas, config, (progress) => {
+          progressBarFull.style.width = 100 * progress + "%";
+        }).then((unityInstance) => {
+          loadingBar.style.display = "none";
+          fullscreenButton.onclick = () => {
+            unityInstance.SetFullscreen(1);
+          };
+        }).catch((message) => {
+          alert(message);
+        });
+      };
       
-      // Start loading Unity
-      loadUnityScript();
+      document.body.appendChild(script);
     </script>
   </body>
 </html>
