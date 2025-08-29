@@ -87,6 +87,272 @@
             z-index: 1000;
             display: none;
         }
+
+        /* Game Room Loading Styles */
+        .game-room-loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 15000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .game-room-loading .loading-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 20px;
+            padding: 3rem;
+            text-align: center;
+            max-width: 500px;
+            border: 2px solid #ffd700;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.7);
+            animation: slideIn 0.5s ease;
+        }
+
+        .game-room-loading .loading-header {
+            margin-bottom: 2rem;
+        }
+
+        .game-room-loading .loading-header i {
+            font-size: 3rem;
+            color: #ffd700;
+            margin-bottom: 1rem;
+            animation: pulse 2s infinite;
+        }
+
+        .game-room-loading .loading-header h3 {
+            color: #ffffff;
+            font-size: 1.8rem;
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .game-room-loading .loading-message {
+            margin-bottom: 2rem;
+            color: #e0e0e0;
+        }
+
+        .game-room-loading .bet-info {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid #ffd700;
+            border-radius: 10px;
+            padding: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .game-room-loading .bet-amount {
+            color: #ffd700;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .room-progress-container {
+            margin: 2rem 0;
+        }
+
+        .room-progress-bar {
+            width: 100%;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .room-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ffd700, #ffed4e);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+
+        .room-progress-text {
+            color: #ffd700;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .loading-steps {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .loading-steps .step {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #888;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+
+        .loading-steps .step.active {
+            color: #ffd700;
+        }
+
+        .loading-steps .step.completed {
+            color: #00ff88;
+        }
+
+        .loading-steps .step i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Betting Interface Styles */
+        .betting-interface {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 15px;
+            padding: 1.5rem;
+            border: 2px solid #ffd700;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            z-index: 5000;
+            min-width: 400px;
+            animation: slideUp 0.5s ease;
+        }
+
+        .betting-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            color: #ffd700;
+            justify-content: center;
+        }
+
+        .betting-header i {
+            font-size: 1.5rem;
+        }
+
+        .betting-header h3 {
+            margin: 0;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .betting-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .bet-btn {
+            background: linear-gradient(135deg, #2a2a4e 0%, #1e1e3e 100%);
+            border: 2px solid #ffd700;
+            border-radius: 12px;
+            padding: 1rem;
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+        }
+
+        .bet-btn:hover {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #1a1a2e;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(255, 215, 0, 0.4);
+        }
+
+        .bet-btn:active {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.6);
+        }
+
+        .bet-btn .bet-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .bet-btn .bet-currency {
+            font-size: 1.5rem;
+        }
+
+        .balance-info {
+            text-align: center;
+            color: #e0e0e0;
+            font-size: 1.1rem;
+            padding: 0.75rem;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .balance-info span {
+            font-weight: 600;
+        }
+
+        #playerBalance {
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .betting-interface {
+                min-width: 90%;
+                left: 5%;
+                transform: none;
+            }
+            
+            .betting-buttons {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .game-room-loading .loading-content {
+                margin: 1rem;
+                padding: 2rem;
+            }
+            
+            .loading-steps {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -241,6 +507,81 @@
         </div>
     </div>
 
+    <!-- Game Room Loading Progress -->
+    <div class="game-room-loading" id="gameRoomLoading">
+        <div class="loading-content">
+            <div class="loading-header">
+                <i class="fas fa-dice"></i>
+                <h3>Joining Game Room</h3>
+            </div>
+            <div class="loading-message">
+                <p>Preparing your game session...</p>
+                <div class="bet-info">
+                    Bet Amount: <span class="bet-amount" id="selectedBetAmount">0</span>
+                </div>
+            </div>
+            <div class="room-progress-container">
+                <div class="room-progress-bar">
+                    <div class="room-progress-fill" id="roomProgressFill"></div>
+                </div>
+                <div class="room-progress-text" id="roomProgressText">Initializing...</div>
+            </div>
+            <div class="loading-steps">
+                <div class="step" id="step1">
+                    <i class="fas fa-server"></i>
+                    <span>Connecting to server</span>
+                </div>
+                <div class="step" id="step2">
+                    <i class="fas fa-users"></i>
+                    <span>Finding available room</span>
+                </div>
+                <div class="step" id="step3">
+                    <i class="fas fa-gamepad"></i>
+                    <span>Loading game assets</span>
+                </div>
+                <div class="step" id="step4">
+                    <i class="fas fa-check"></i>
+                    <span>Ready to play</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Betting Interface -->
+    <div class="betting-interface" id="bettingInterface">
+        <div class="betting-header">
+            <i class="fas fa-coins"></i>
+            <h3>Place Your Bet</h3>
+        </div>
+        <div class="betting-buttons">
+            <button class="bet-btn" data-amount="100">
+                <span class="bet-value">100</span>
+                <span class="bet-currency">💰</span>
+            </button>
+            <button class="bet-btn" data-amount="300">
+                <span class="bet-value">300</span>
+                <span class="bet-currency">💰</span>
+            </button>
+            <button class="bet-btn" data-amount="500">
+                <span class="bet-value">500</span>
+                <span class="bet-currency">💰</span>
+            </button>
+            <button class="bet-btn" data-amount="800">
+                <span class="bet-value">800</span>
+                <span class="bet-currency">💰</span>
+            </button>
+        </div>
+        <div class="balance-info">
+            <span>Balance: <span id="playerBalance">10,000</span> 💰</span>
+        </div>
+    </div>
+
+    <!-- Sound Effects -->
+    <audio id="betSound" preload="auto">
+        <source src="sounds/trap-beat-266443.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
     <!-- Notification Container -->
     <div class="notification-container" id="notificationContainer"></div>
 
@@ -273,6 +614,14 @@
                 // Fullscreen button
                 document.getElementById('fullscreenBtn').addEventListener('click', () => {
                     this.toggleFullscreen();
+                });
+
+                // Betting buttons
+                document.querySelectorAll('.bet-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const amount = parseInt(e.currentTarget.dataset.amount);
+                        this.placeBet(amount);
+                    });
                 });
 
                 // Close buttons
@@ -595,6 +944,176 @@
                 };
                 
                 requestAnimationFrame(monitorPerformance);
+            }
+
+            // Betting System
+            placeBet(amount) {
+                console.log(`🎰 Placing bet: ${amount}`);
+                
+                // Play sound effect
+                this.playBetSound();
+                
+                // Check if player has enough balance
+                const currentBalance = parseInt(document.getElementById('playerBalance').textContent.replace(/,/g, ''));
+                if (currentBalance < amount) {
+                    this.showNotification('Insufficient balance!', 'error');
+                    return;
+                }
+                
+                // Update selected bet amount
+                document.getElementById('selectedBetAmount').textContent = amount.toLocaleString();
+                
+                // Show game room loading
+                this.showGameRoomLoading(amount);
+                
+                // Simulate joining game room
+                this.simulateGameRoomJoin(amount);
+            }
+
+            playBetSound() {
+                try {
+                    const betSound = document.getElementById('betSound');
+                    if (betSound) {
+                        betSound.currentTime = 0; // Reset to start
+                        const soundVolume = document.getElementById('soundVolume');
+                        if (soundVolume) {
+                            betSound.volume = soundVolume.value / 100;
+                        }
+                        betSound.play().catch(e => {
+                            console.warn('⚠️ Could not play bet sound:', e);
+                        });
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Error playing bet sound:', error);
+                }
+            }
+
+            showGameRoomLoading(amount) {
+                const loadingScreen = document.getElementById('gameRoomLoading');
+                if (loadingScreen) {
+                    loadingScreen.style.display = 'flex';
+                    
+                    // Reset progress
+                    const progressFill = document.getElementById('roomProgressFill');
+                    const progressText = document.getElementById('roomProgressText');
+                    const steps = document.querySelectorAll('.loading-steps .step');
+                    
+                    if (progressFill) progressFill.style.width = '0%';
+                    if (progressText) progressText.textContent = 'Initializing...';
+                    
+                    // Reset all steps
+                    steps.forEach(step => {
+                        step.classList.remove('active', 'completed');
+                    });
+                }
+            }
+
+            hideGameRoomLoading() {
+                const loadingScreen = document.getElementById('gameRoomLoading');
+                if (loadingScreen) {
+                    loadingScreen.style.display = 'none';
+                }
+            }
+
+            simulateGameRoomJoin(amount) {
+                const progressFill = document.getElementById('roomProgressFill');
+                const progressText = document.getElementById('roomProgressText');
+                const steps = document.querySelectorAll('.loading-steps .step');
+                
+                const progressSteps = [
+                    { progress: 25, text: 'Connecting to server...', stepIndex: 0 },
+                    { progress: 50, text: 'Finding available room...', stepIndex: 1 },
+                    { progress: 75, text: 'Loading game assets...', stepIndex: 2 },
+                    { progress: 100, text: 'Ready to play!', stepIndex: 3 }
+                ];
+
+                let currentStep = 0;
+                
+                const updateProgress = () => {
+                    if (currentStep < progressSteps.length) {
+                        const step = progressSteps[currentStep];
+                        
+                        // Update progress bar
+                        if (progressFill) {
+                            progressFill.style.width = step.progress + '%';
+                        }
+                        
+                        // Update progress text
+                        if (progressText) {
+                            progressText.textContent = step.text;
+                        }
+                        
+                        // Update step indicators
+                        if (steps[step.stepIndex]) {
+                            // Mark previous steps as completed
+                            for (let i = 0; i < step.stepIndex; i++) {
+                                steps[i].classList.remove('active');
+                                steps[i].classList.add('completed');
+                            }
+                            
+                            // Mark current step as active
+                            steps[step.stepIndex].classList.add('active');
+                            steps[step.stepIndex].classList.remove('completed');
+                        }
+                        
+                        currentStep++;
+                        
+                        if (currentStep < progressSteps.length) {
+                            // Continue to next step
+                            setTimeout(updateProgress, 1000 + Math.random() * 1000);
+                        } else {
+                            // Mark final step as completed
+                            if (steps[step.stepIndex]) {
+                                steps[step.stepIndex].classList.remove('active');
+                                steps[step.stepIndex].classList.add('completed');
+                            }
+                            
+                            // Complete the process
+                            setTimeout(() => {
+                                this.onGameRoomJoined(amount);
+                            }, 1000);
+                        }
+                    }
+                };
+                
+                // Start the progress simulation
+                setTimeout(updateProgress, 500);
+            }
+
+            onGameRoomJoined(amount) {
+                console.log(`🎮 Successfully joined game room with bet: ${amount}`);
+                
+                // Update player balance
+                const balanceElement = document.getElementById('playerBalance');
+                if (balanceElement) {
+                    const currentBalance = parseInt(balanceElement.textContent.replace(/,/g, ''));
+                    const newBalance = currentBalance - amount;
+                    balanceElement.textContent = newBalance.toLocaleString();
+                }
+                
+                // Hide loading screen
+                this.hideGameRoomLoading();
+                
+                // Show success notification
+                this.showNotification(`Joined game room with bet: ${amount.toLocaleString()} 💰`, 'success');
+                
+                // Update status
+                this.updateStatus('playing', 'In Game Room');
+                
+                // Send bet to Unity game
+                if (this.unityInstance) {
+                    try {
+                        this.unityInstance.SendMessage('GameManager', 'OnBetPlaced', amount.toString());
+                    } catch (error) {
+                        console.warn('⚠️ Could not send bet to Unity:', error);
+                    }
+                }
+                
+                // Trigger game room joined event
+                const event = new CustomEvent('gameRoomJoined', {
+                    detail: { amount: amount }
+                });
+                window.dispatchEvent(event);
             }
         }
 
