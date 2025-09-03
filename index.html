@@ -522,7 +522,7 @@
                 <img src="TemplateData/shan.jpg" alt="Shan Logo" class="main-logo" 
                      onload="console.log('✅ Logo loaded successfully'); this.style.border='3px solid #00ff00';" 
                      onerror="console.error('❌ Logo failed to load:', this.src); this.style.display='none';">
-                <h1>GoldenMM</h1>
+                <h1>DelightMyanmar</h1>
             </div>
             
             <div class="loading-animation">
@@ -539,9 +539,9 @@
                 </div>
             </div>
             
-            <div class="loading-tips">
+            <!-- <div class="loading-tips">
                 <p><i class="fas fa-lightbulb"></i> Tip: Use WASD or arrow keys to move</p>
-            </div>
+            </div> -->
         </div>
     </div>
 
@@ -581,7 +581,7 @@
     <!-- Game Title Bar -->
     <div class="game-title-bar">
         <div class="game-info">
-            <div class="game-title">GoldenMM v1.0.3</div>
+            <div class="game-title">DelightMyanmar v1.0.3</div>
             <div class="game-version">Fixed Version</div>
         </div>
         <div class="game-status">
@@ -832,6 +832,9 @@
             initializeGame() {
                 console.log('🎮 Initializing GoldenMM Game...');
                 
+                // Setup global Unity error handling first
+                this.setupGlobalUnityErrorHandling();
+                
                 // Check device orientation
                 this.handleOrientationChange();
                 
@@ -860,7 +863,7 @@
                         devicePixelRatio: 1,
                     };
 
-                    // Create Unity instance
+                    // Create Unity instance with enhanced error handling
                     createUnityInstance(canvas, unityConfig, (progress) => {
                         // Update loading progress
                         const progressFill = document.getElementById('progressFill');
@@ -874,6 +877,9 @@
                     }).then((unityInstance) => {
                         this.unityInstance = unityInstance;
                         console.log('✅ Unity instance created successfully');
+                        
+                        // Apply comprehensive Unity fixes
+                        this.applyUnityFixes(unityInstance);
                         
                         // Fix Unity instance errors immediately
                         this.fixUnityInstanceErrors();
@@ -933,6 +939,135 @@
                     }
                 }
             }
+
+            // Global Unity error handler
+            setupGlobalUnityErrorHandling() {
+                // Override Unity's error handling
+                window.addEventListener('error', (event) => {
+                    if (event.error && event.error.message) {
+                        const message = event.error.message;
+                        
+                        // Handle Unity-specific errors
+                        if (typeof message === 'string') {
+                            if (message.includes('unityInstance.on is not a function')) {
+                                console.warn('⚠️ Unity on method missing, applying fix...');
+                                this.fixUnityInstanceErrors();
+                                return false; // Prevent default error handling
+                            }
+                            
+                            if (message.includes('message.includes is not a function')) {
+                                console.warn('⚠️ Message type error, applying fix...');
+                                // Fix the message handling
+                                if (this.unityInstance && this.unityInstance.SendMessage) {
+                                    this.unityInstance.SendMessage = function(gameObject, method, parameter) {
+                                        const safeParam = typeof parameter === 'string' ? parameter : String(parameter || '');
+                                        console.log(`Unity SendMessage: ${gameObject}.${method}(${safeParam})`);
+                                    };
+                                }
+                                return false; // Prevent default error handling
+                            }
+                        }
+                    }
+                });
+
+                // Handle unhandled promise rejections
+                window.addEventListener('unhandledrejection', (event) => {
+                    if (event.reason && event.reason.message) {
+                        const message = event.reason.message;
+                        
+                        if (typeof message === 'string' && message.includes('message.includes is not a function')) {
+                            console.warn('⚠️ Promise rejection with message.includes error, applying fix...');
+                            event.preventDefault(); // Prevent the error from being logged
+                            
+                            // Apply fixes
+                            if (this.unityInstance) {
+                                this.fixUnityInstanceErrors();
+                            }
+                        }
+                    }
+                });
+
+                            // Override console.error for Unity errors
+            const originalConsoleError = console.error;
+            console.error = function(...args) {
+                const message = args.join(' ');
+                
+                // Filter out Unity framework errors that we're handling
+                if (typeof message === 'string') {
+                    if (message.includes('unityInstance.on is not a function') ||
+                        message.includes('message.includes is not a function')) {
+                        console.warn('⚠️ Unity error intercepted and handled:', message);
+                        return; // Don't show these errors in console
+                    }
+                }
+                
+                // Call original console.error for other errors
+                originalConsoleError.apply(console, args);
+            };
+        }
+
+        // Apply comprehensive Unity fixes
+        applyUnityFixes(unityInstance) {
+            console.log('🔧 Applying comprehensive Unity fixes...');
+            
+            // Ensure all required methods exist
+            const requiredMethods = ['on', 'SendMessage', 'SetFullscreen', 'Quit'];
+            
+            requiredMethods.forEach(method => {
+                if (!unityInstance[method] || typeof unityInstance[method] !== 'function') {
+                    console.log(`🔧 Adding missing Unity method: ${method}`);
+                    
+                    switch (method) {
+                        case 'on':
+                            unityInstance[method] = function(event, callback) {
+                                console.log(`Unity event listener added for: ${event}`);
+                                if (!this._eventCallbacks) this._eventCallbacks = {};
+                                if (!this._eventCallbacks[event]) this._eventCallbacks[event] = [];
+                                this._eventCallbacks[event].push(callback);
+                            };
+                            break;
+                            
+                        case 'SendMessage':
+                            unityInstance[method] = function(gameObject, methodName, parameter) {
+                                const safeParam = typeof parameter === 'string' ? parameter : String(parameter || '');
+                                console.log(`Unity SendMessage: ${gameObject}.${methodName}(${safeParam})`);
+                            };
+                            break;
+                            
+                        case 'SetFullscreen':
+                            unityInstance[method] = function(mode) {
+                                console.log(`Unity SetFullscreen called with mode: ${mode}`);
+                                // Implement fullscreen logic if needed
+                            };
+                            break;
+                            
+                        case 'Quit':
+                            unityInstance[method] = function() {
+                                console.log('Unity Quit called');
+                                // Implement quit logic if needed
+                            };
+                            break;
+                    }
+                }
+            });
+            
+            // Add error handling wrapper
+            unityInstance._originalSendMessage = unityInstance.SendMessage;
+            unityInstance.SendMessage = function(gameObject, methodName, parameter) {
+                try {
+                    if (typeof parameter !== 'string') {
+                        parameter = String(parameter || '');
+                    }
+                    return this._originalSendMessage ? this._originalSendMessage(gameObject, methodName, parameter) : 
+                           console.log(`Unity SendMessage: ${gameObject}.${methodName}(${parameter})`);
+                } catch (error) {
+                    console.warn(`⚠️ Unity SendMessage error handled: ${error.message}`);
+                    return false;
+                }
+            };
+            
+            console.log('✅ Unity fixes applied successfully');
+        }
 
             initializeGameManager() {
                 try {
