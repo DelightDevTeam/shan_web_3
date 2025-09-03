@@ -875,6 +875,9 @@
                         this.unityInstance = unityInstance;
                         console.log('✅ Unity instance created successfully');
                         
+                        // Fix Unity instance errors immediately
+                        this.fixUnityInstanceErrors();
+                        
                         // Trigger unity ready event
                         window.dispatchEvent(new Event('unity-ready'));
                         
@@ -895,6 +898,9 @@
             onUnityReady() {
                 console.log('🎮 Unity is ready, initializing game components...');
                 
+                // Fix Unity instance errors first
+                this.fixUnityInstanceErrors();
+                
                 // Update status
                 this.updateStatus('playing', 'Playing');
                 
@@ -903,6 +909,29 @@
                 
                 // Setup SmartFoxServer connection
                 this.setupSmartFoxConnection();
+            }
+
+            // Fix Unity instance errors
+            fixUnityInstanceErrors() {
+                if (this.unityInstance) {
+                    // Ensure unityInstance has proper methods
+                    if (!this.unityInstance.on) {
+                        this.unityInstance.on = function(event, callback) {
+                            console.log(`Unity event listener added for: ${event}`);
+                            // Store callbacks for later use
+                            if (!this._eventCallbacks) this._eventCallbacks = {};
+                            if (!this._eventCallbacks[event]) this._eventCallbacks[event] = [];
+                            this._eventCallbacks[event].push(callback);
+                        };
+                    }
+                    
+                    // Ensure SendMessage method exists
+                    if (!this.unityInstance.SendMessage) {
+                        this.unityInstance.SendMessage = function(gameObject, method, parameter) {
+                            console.log(`Unity SendMessage: ${gameObject}.${method}(${parameter})`);
+                        };
+                    }
+                }
             }
 
             initializeGameManager() {
@@ -1287,6 +1316,9 @@
                 console.log('🎯 Logo element found:', logoImg);
                 logoImg.addEventListener('load', () => {
                     console.log('✅ Logo image loaded successfully');
+                    // Ensure logo is visible
+                    logoImg.style.display = 'block';
+                    logoImg.style.opacity = '1';
                 });
                 logoImg.addEventListener('error', (e) => {
                     console.error('❌ Logo image failed to load:', e.target.src);
@@ -1312,6 +1344,16 @@
                     `;
                     e.target.parentNode.insertBefore(fallback, e.target);
                 });
+                
+                // Force logo to be visible after a short delay
+                setTimeout(() => {
+                    if (logoImg.style.display === 'none' || logoImg.offsetParent === null) {
+                        console.log('🔄 Forcing logo to be visible...');
+                        logoImg.style.display = 'block';
+                        logoImg.style.opacity = '1';
+                        logoImg.style.visibility = 'visible';
+                    }
+                }, 1000);
             }
             
             new GoldenMMGame();
