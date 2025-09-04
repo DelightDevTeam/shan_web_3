@@ -628,7 +628,7 @@
 
     <!-- Unity Container -->
     <div id="unity-container" class="unity-container">
-        <canvas id="unity-canvas"></canvas>
+        <canvas id="unity-canvas" style="width: 100%; height: 100%; background: #000; display: block; visibility: visible; opacity: 1; position: relative; z-index: 10;"></canvas>
     </div>
 
     <!-- Game Controls -->
@@ -979,8 +979,13 @@
                         // Trigger unity ready event
                         window.dispatchEvent(new Event('unity-ready'));
                         
-                        // Hide loading screen
+                        // Hide loading screen and show Unity game room
                         this.hideLoadingScreen();
+                        
+                        // Auto-enter the main game room after Unity loads
+                        setTimeout(() => {
+                            this.enterMainGameRoom();
+                        }, 3000); // Wait 3 seconds for Unity to fully load
                         
                     }).catch((error) => {
                         console.error('❌ Unity initialization failed:', error);
@@ -1007,6 +1012,11 @@
                 
                 // Setup SmartFoxServer connection
                 this.setupSmartFoxConnection();
+                
+                // Auto-enter the main game room after Unity is ready
+                setTimeout(() => {
+                    this.enterMainGameRoom();
+                }, 2000); // Wait 2 seconds for Unity to fully initialize
             }
 
             // Fix Unity instance errors
@@ -1668,6 +1678,69 @@
                 
                 // Show success message
                 this.showNotification(`Successfully joined game room with bet: ${amount}`, 'success');
+            }
+
+            // Auto-enter the main Unity game room
+            enterMainGameRoom() {
+                console.log('🎮 Entering main Unity game room...');
+                
+                // Hide any loading screens
+                this.hideLoadingScreen();
+                this.hideGameRoomLoading();
+                
+                // Hide the betting interface modal
+                const bettingModal = document.getElementById('bettingModal');
+                if (bettingModal) {
+                    bettingModal.style.display = 'none';
+                }
+                
+                // Show the Unity canvas (the actual game room)
+                const unityCanvas = document.getElementById('unity-canvas');
+                if (unityCanvas) {
+                    unityCanvas.style.display = 'block';
+                    unityCanvas.style.visibility = 'visible';
+                    unityCanvas.style.opacity = '1';
+                }
+                
+                // Send message to Unity to show the main game room
+                if (this.unityInstance) {
+                    try {
+                        // Try multiple Unity game object names to show main game room
+                        const gameObjects = ['GameManager', 'GameController', 'MainController', 'Game', 'UIManager'];
+                        
+                        for (const gameObject of gameObjects) {
+                            try {
+                                this.unityInstance.SendMessage(gameObject, 'ShowMainGameRoom', '');
+                                console.log(`✅ Sent ShowMainGameRoom to Unity ${gameObject}`);
+                                break;
+                            } catch (error) {
+                                console.log(`⚠️ Could not send ShowMainGameRoom to ${gameObject}, trying next...`);
+                            }
+                        }
+                        
+                        // Also try to initialize the game room
+                        for (const gameObject of gameObjects) {
+                            try {
+                                this.unityInstance.SendMessage(gameObject, 'InitializeGameRoom', '');
+                                console.log(`✅ Sent InitializeGameRoom to Unity ${gameObject}`);
+                                break;
+                            } catch (error) {
+                                console.log(`⚠️ Could not send InitializeGameRoom to ${gameObject}, trying next...`);
+                            }
+                        }
+                        
+                    } catch (error) {
+                        console.warn('⚠️ Could not send messages to Unity:', error);
+                    }
+                }
+                
+                // Update status
+                this.updateStatus('playing', 'In Game Room');
+                
+                // Show success notification
+                this.showNotification('Welcome to the main game room! 🎮', 'success');
+                
+                console.log('✅ Main Unity game room should now be visible');
             }
         }
 
