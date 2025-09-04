@@ -1,41 +1,4 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "index.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "Build/**",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "TemplateData/**",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "sounds/**",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/",
-      "dest": "/index.html"
-    },
-    {
-      "src": "/Build/(.*)",
-      "dest": "/Build/$1"
-    },
-    {
-      "src": "/TemplateData/(.*)",
-      "dest": "/TemplateData/$1"
-    },
-    {
-      "src": "/sounds/(.*)",
-      "dest": "/sounds/$1"
-    }
-  ],
   "headers": [
     {
       "source": "/Build/(.*).wasm",
