@@ -775,34 +775,7 @@
     </div>
 
     <!-- Betting Interface -->
-    <div class="betting-interface" id="bettingInterface">
-        <div class="betting-header">
-            <img src="TemplateData/shan.jpg" alt="Shan Logo" class="logo">
-            <i class="fas fa-coins"></i>
-            <h3>Place Your Bet</h3>
-        </div>
-        <div class="betting-buttons">
-            <button class="bet-btn" data-amount="100">
-                <span class="bet-value">100</span>
-                <span class="bet-currency">💰</span>
-            </button>
-            <button class="bet-btn" data-amount="300">
-                <span class="bet-value">300</span>
-                <span class="bet-currency">💰</span>
-            </button>
-            <button class="bet-btn" data-amount="500">
-                <span class="bet-value">500</span>
-                <span class="bet-currency">💰</span>
-            </button>
-            <button class="bet-btn" data-amount="800">
-                <span class="bet-value">800</span>
-                <span class="bet-currency">💰</span>
-            </button>
-        </div>
-        <div class="balance-info">
-            <span>Balance: <span id="playerBalance">10,000</span> 💰</span>
-        </div>
-    </div>
+    <!-- Betting Interface Modal - REMOVED (Unity has its own interface) -->
 
     <!-- Sound Effects -->
     <audio id="betSound" preload="auto">
@@ -985,7 +958,7 @@
                         // Auto-enter the main game room after Unity loads
                         setTimeout(() => {
                             this.enterMainGameRoom();
-                        }, 3000); // Wait 3 seconds for Unity to fully load
+                        }, 2000); // Wait 2 seconds for Unity to fully load
                         
                     }).catch((error) => {
                         console.error('❌ Unity initialization failed:', error);
@@ -1016,7 +989,7 @@
                 // Auto-enter the main game room after Unity is ready
                 setTimeout(() => {
                     this.enterMainGameRoom();
-                }, 2000); // Wait 2 seconds for Unity to fully initialize
+                }, 1000); // Wait 1 second for Unity to fully initialize
             }
 
             // Fix Unity instance errors
@@ -1688,10 +1661,16 @@
                 this.hideLoadingScreen();
                 this.hideGameRoomLoading();
                 
-                // Hide the betting interface modal
+                // Hide the betting interface modal (not needed - Unity has its own interface)
                 const bettingModal = document.getElementById('bettingModal');
                 if (bettingModal) {
                     bettingModal.style.display = 'none';
+                }
+                
+                // Also hide any other UI overlays that might interfere
+                const bettingInterface = document.getElementById('bettingInterface');
+                if (bettingInterface) {
+                    bettingInterface.style.display = 'none';
                 }
                 
                 // Show the Unity canvas (the actual game room)
