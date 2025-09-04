@@ -817,6 +817,7 @@
             <div class="loading-tips">
                 <p><i class="fas fa-lightbulb"></i> Tip: Use WASD or arrow keys to move</p>
                 <p><i class="fas fa-music"></i> Touch anywhere to start background music</p>
+                <p id="musicStatus" style="color: #ffd700; font-weight: bold; animation: textGlow 2s ease-in-out infinite alternate;"><i class="fas fa-music"></i> Music will start automatically</p>
             </div>
         </div>
     </div>
@@ -1441,27 +1442,44 @@
                 // Add touch/click to start music
                 const startMusic = () => {
                     if (backgroundMusic.paused) {
-                        backgroundMusic.play().then(() => {
-                            console.log('🎵 Background music started');
-                            this.showNotification('Music started! 🎵', 'success');
-                        }).catch((error) => {
-                            console.warn('⚠️ Could not start background music:', error);
-                            this.showNotification('Click anywhere to start music', 'info');
-                        });
+                        // Set volume before playing
+                        backgroundMusic.volume = 0.6;
+                        
+                        const playPromise = backgroundMusic.play();
+                        if (playPromise !== undefined) {
+                            playPromise.then(() => {
+                                console.log('🎵 Background music started');
+                                this.showNotification('Music started! 🎵', 'success');
+                                this.updateMusicStatus('Music is playing! 🎵');
+                            }).catch((error) => {
+                                console.warn('⚠️ Could not start background music:', error);
+                                // Don't show notification for autoplay policy errors
+                                if (!error.message.includes('user didn\'t interact')) {
+                                    this.showNotification('Click anywhere to start music', 'info');
+                                }
+                                this.updateMusicStatus('Click anywhere to start music');
+                            });
+                        }
                     }
                 };
                 
-                // Add event listeners for user interaction
-                document.addEventListener('click', startMusic, { once: true });
-                document.addEventListener('touchstart', startMusic, { once: true });
-                document.addEventListener('keydown', startMusic, { once: true });
+                // Add event listeners for user interaction (more comprehensive)
+                const userInteractionEvents = ['click', 'touchstart', 'touchend', 'keydown', 'mousedown'];
+                userInteractionEvents.forEach(eventType => {
+                    document.addEventListener(eventType, startMusic, { once: true, passive: true });
+                });
                 
-                // Auto-start music after 2 seconds if no user interaction
+                // Try to start music immediately (will fail on some browsers due to autoplay policy)
+                setTimeout(() => {
+                    startMusic();
+                }, 100);
+                
+                // Auto-start music after 1 second if no user interaction
                 setTimeout(() => {
                     if (backgroundMusic.paused) {
                         startMusic();
                     }
-                }, 2000);
+                }, 1000);
                 
                 // Update volume when slider changes
                 if (musicVolume) {
@@ -1643,49 +1661,106 @@
 
             toggleFullscreen() {
                 try {
-                    // Check for mobile fullscreen support
-                    if (window.innerHeight > window.innerWidth) {
-                        // Mobile device - use screen orientation API
-                        if (screen.orientation && screen.orientation.lock) {
-                            screen.orientation.lock('landscape').then(() => {
-                                console.log('✅ Screen locked to landscape');
-                                this.showNotification('Screen locked to landscape mode', 'success');
-                            }).catch((error) => {
-                                console.warn('⚠️ Could not lock screen orientation:', error);
-                                this.showNotification('Please rotate your device manually', 'warning');
-                            });
-                        } else {
-                            // Fallback for older browsers
-                            this.showNotification('Please rotate your device to landscape mode', 'info');
-                        }
+                    if (this.isMobile) {
+                        // Mobile fullscreen approach
+                        this.toggleMobileFullscreen();
                     } else {
                         // Desktop fullscreen
-                        if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement) {
-                            const elem = document.documentElement;
-                            if (elem.requestFullscreen) {
-                                elem.requestFullscreen();
-                            } else if (elem.webkitRequestFullscreen) {
-                                elem.webkitRequestFullscreen();
-                            } else if (elem.mozRequestFullScreen) {
-                                elem.mozRequestFullScreen();
-                            } else if (elem.msRequestFullscreen) {
-                                elem.msRequestFullscreen();
-                            }
-                        } else {
-                            if (document.exitFullscreen) {
-                                document.exitFullscreen();
-                            } else if (document.webkitExitFullscreen) {
-                                document.webkitExitFullscreen();
-                            } else if (document.mozCancelFullScreen) {
-                                document.mozCancelFullScreen();
-                            } else if (document.msExitFullscreen) {
-                                document.msExitFullscreen();
-                            }
-                        }
+                        this.toggleDesktopFullscreen();
                     }
                 } catch (error) {
                     console.error('❌ Fullscreen toggle failed:', error);
                     this.showNotification('Fullscreen not supported on this device', 'warning');
+                }
+            }
+
+            toggleMobileFullscreen() {
+                const isPortrait = window.innerHeight > window.innerWidth;
+                
+                if (isPortrait) {
+                    // Try to lock to landscape
+                    if (screen.orientation && screen.orientation.lock) {
+                        screen.orientation.lock('landscape').then(() => {
+                            console.log('✅ Screen locked to landscape');
+                            this.showNotification('Screen locked to landscape mode', 'success');
+                            // Also try to enter fullscreen
+                            this.enterMobileFullscreen();
+                        }).catch((error) => {
+                            console.warn('⚠️ Could not lock screen orientation:', error);
+                            this.showNotification('Please rotate your device manually', 'warning');
+                        });
+                    } else {
+                        // Fallback - try to enter fullscreen anyway
+                        this.enterMobileFullscreen();
+                    }
+                } else {
+                    // Already in landscape, just toggle fullscreen
+                    this.enterMobileFullscreen();
+                }
+            }
+
+            enterMobileFullscreen() {
+                const elem = document.documentElement;
+                
+                // Try different fullscreen methods for mobile
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen().then(() => {
+                        console.log('✅ Mobile fullscreen entered');
+                        this.showNotification('Fullscreen mode activated', 'success');
+                    }).catch((error) => {
+                        console.warn('⚠️ Fullscreen failed:', error);
+                        this.showNotification('Fullscreen not available', 'warning');
+                    });
+                } else if (elem.webkitRequestFullscreen) {
+                    elem.webkitRequestFullscreen();
+                } else if (elem.mozRequestFullScreen) {
+                    elem.mozRequestFullScreen();
+                } else if (elem.msRequestFullscreen) {
+                    elem.msRequestFullscreen();
+                } else {
+                    // Fallback - hide address bar on mobile
+                    this.hideMobileAddressBar();
+                }
+            }
+
+            hideMobileAddressBar() {
+                // Scroll to hide address bar on mobile
+                window.scrollTo(0, 1);
+                setTimeout(() => {
+                    window.scrollTo(0, 0);
+                }, 100);
+                this.showNotification('Mobile view optimized', 'info');
+            }
+
+            updateMusicStatus(message) {
+                const musicStatus = document.getElementById('musicStatus');
+                if (musicStatus) {
+                    musicStatus.innerHTML = `<i class="fas fa-music"></i> ${message}`;
+                }
+            }
+
+            toggleDesktopFullscreen() {
+                if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement) {
+                    const elem = document.documentElement;
+                    if (elem.requestFullscreen) {
+                        elem.requestFullscreen();
+                    } else if (elem.webkitRequestFullscreen) {
+                        elem.webkitRequestFullscreen();
+                    } else if (elem.mozRequestFullScreen) {
+                        elem.mozRequestFullScreen();
+                    } else if (elem.msRequestFullscreen) {
+                        elem.msRequestFullscreen();
+                    }
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    } else if (document.webkitExitFullscreen) {
+                        document.webkitExitFullscreen();
+                    } else if (document.mozCancelFullScreen) {
+                        document.mozCancelFullScreen();
+                    } else if (document.msExitFullscreen) {
+                        document.msExitFullscreen();
+                    }
                 }
             }
 
