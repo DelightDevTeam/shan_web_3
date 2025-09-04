@@ -1,7 +1,7 @@
 {
   "headers": [
     {
-      "source": "/Build/*.wasm",
+      "source": "/Build/(.*).wasm",
       "headers": [
         {
           "key": "Content-Type",
@@ -14,7 +14,7 @@
       ]
     },
     {
-      "source": "/Build/*.data",
+      "source": "/Build/(.*).data",
       "headers": [
         {
           "key": "Cache-Control",
@@ -23,7 +23,7 @@
       ]
     },
     {
-      "source": "/Build/*.framework.js",
+      "source": "/Build/(.*).framework.js",
       "headers": [
         {
           "key": "Cache-Control",
@@ -32,11 +32,20 @@
       ]
     },
     {
-      "source": "/Build/*.loader.js",
+      "source": "/Build/(.*).loader.js",
       "headers": [
         {
           "key": "Cache-Control",
           "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/TemplateData/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
         }
       ]
     }
