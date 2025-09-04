@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deployment Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            padding: 50px;
+            margin: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            color: #ffd700;
+            margin-bottom: 20px;
+        }
+        .status {
+            background: #4CAF50;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .file-list {
+            text-align: left;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .file-item {
+            margin: 5px 0;
+            padding: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Deployment Test</h1>
+        <div class="status">
+            ✅ Vercel deployment is working!
+        </div>
+        
+        <p>If you can see this page, your Vercel deployment is working correctly.</p>
+        
+        <div class="file-list">
+            <h3>📁 Expected Files:</h3>
+            <div class="file-item">✅ index.html (main game file)</div>
+            <div class="file-item">✅ Build/ (Unity WebGL files)</div>
+            <div class="file-item">✅ TemplateData/ (Unity assets)</div>
+            <div class="file-item">✅ sounds/ (audio files)</div>
+        </div>
+        
+        <p><strong>Next Step:</strong> <a href="/index.html" style="color: #ffd700;">Go to Main Game</a></p>
+        
+        <div style="margin-top: 30px; font-size: 0.9em; opacity: 0.8;">
+            <p>Deployment Time: <span id="deploymentTime"></span></p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('deploymentTime').textContent = new Date().toLocaleString();
+    </script>
+</body>
+</html>
