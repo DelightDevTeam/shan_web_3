@@ -947,6 +947,7 @@
                 this.isInitialized = false;
                 this.unityInstance = null;
                 this.gameManager = null;
+                this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                 this.setupEventListeners();
                 this.initializeGame();
             }
@@ -1041,9 +1042,7 @@
             }
 
             setupMobileOptimizations() {
-                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                
-                if (isMobile) {
+                if (this.isMobile) {
                     console.log('📱 Mobile device detected, applying optimizations...');
                     
                     // Add mobile-specific viewport meta tag if not present
@@ -1082,8 +1081,7 @@
                     }
                     
                     // Mobile-specific loading timeout
-                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                    if (isMobile) {
+                    if (this.isMobile) {
                         // Set a timeout for mobile to prevent infinite black screen
                         setTimeout(() => {
                             if (!this.unityInstance) {
@@ -1098,8 +1096,6 @@
                     const loadingBar = document.getElementById('unity-loading-bar');
                     
                     // Unity configuration with mobile optimizations
-                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                    
                     const unityConfig = {
                         dataUrl: 'Build/SKMWebDelight.data',
                         frameworkUrl: 'Build/SKMWebDelight.framework.js',
@@ -1107,19 +1103,19 @@
                         companyName: 'GoldenMM',
                         productName: 'GoldenMM Game',
                         productVersion: '1.0.3',
-                        devicePixelRatio: isMobile ? 1 : window.devicePixelRatio,
+                        devicePixelRatio: this.isMobile ? 1 : window.devicePixelRatio,
                         webglContextAttributes: {
                             preserveDrawingBuffer: false,
-                            antialias: isMobile ? false : true,
+                            antialias: this.isMobile ? false : true,
                             alpha: false,
                             depth: true,
                             stencil: false,
-                            powerPreference: isMobile ? "low-power" : "high-performance"
+                            powerPreference: this.isMobile ? "low-power" : "high-performance"
                         }
                     };
                     
                     // Mobile-specific optimizations
-                    if (isMobile) {
+                    if (this.isMobile) {
                         unityConfig.initialMemorySize = 8 * 1024 * 1024; // 8MB for mobile
                         unityConfig.maximumMemorySize = 128 * 1024 * 1024; // 128MB max for mobile
                         unityConfig.fallbackQuality = "low";
@@ -1137,8 +1133,7 @@
                             progressText.textContent = percentage + '%';
                             
                             // Mobile-specific progress updates
-                            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                            if (isMobile) {
+                            if (this.isMobile) {
                                 // Show more detailed progress for mobile
                                 if (percentage < 30) {
                                     progressText.textContent = 'Loading Unity engine...';
@@ -1168,8 +1163,7 @@
                         this.hideLoadingScreen();
                         
                         // Auto-enter the main game room after Unity loads
-                        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                        const loadDelay = isMobile ? 1000 : 2000; // Faster on mobile
+                        const loadDelay = this.isMobile ? 1000 : 2000; // Faster on mobile
                         
                         setTimeout(() => {
                             this.enterMainGameRoom();
@@ -1536,10 +1530,9 @@
                 const unityContainer = document.getElementById('unity-container');
                 
                 if (unityCanvas && unityContainer) {
-                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                     const isPortrait = window.innerHeight > window.innerWidth;
                     
-                    if (isMobile) {
+                    if (this.isMobile) {
                         // Mobile optimizations
                         if (isPortrait) {
                             // Portrait mode - make Unity canvas fit properly
