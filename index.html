@@ -821,6 +821,9 @@
 
     <!-- Unity WebGL Fixes Script -->
     <script src="unity-webgl-fixes.js"></script>
+    
+    <!-- Unity WebGL Loader Script -->
+    <script src="Build/SKMWebDelight.loader.js"></script>
 
     <!-- Main Game Script -->
     <script>
@@ -922,6 +925,13 @@
 
             initializeUnity() {
                 try {
+                    // Check if Unity loader is available
+                    if (typeof createUnityInstance === 'undefined') {
+                        console.error('❌ Unity loader not loaded. Please check if Build/SKMWebDelight.loader.js is accessible.');
+                        this.showError('Unity loader not found. Please refresh the page.');
+                        return;
+                    }
+                    
                     // Load Unity WebGL build
                     const canvas = document.getElementById('unity-canvas');
                     const loadingBar = document.getElementById('unity-loading-bar');
@@ -931,11 +941,18 @@
                         dataUrl: 'Build/SKMWebDelight.data',
                         frameworkUrl: 'Build/SKMWebDelight.framework.js',
                         codeUrl: 'Build/SKMWebDelight.wasm',
-                        streamingAssetsUrl: 'StreamingAssets',
                         companyName: 'GoldenMM',
                         productName: 'GoldenMM Game',
                         productVersion: '1.0.3',
                         devicePixelRatio: 1,
+                        webglContextAttributes: {
+                            preserveDrawingBuffer: false,
+                            antialias: false,
+                            alpha: false,
+                            depth: true,
+                            stencil: false,
+                            powerPreference: "high-performance"
+                        }
                     };
 
                     // Create Unity instance with enhanced error handling
@@ -1537,6 +1554,13 @@
 
                 let currentStep = 0;
                 
+                // Check if Unity is ready
+                if (!this.unityInstance) {
+                    console.warn('⚠️ Unity instance not ready, waiting...');
+                    setTimeout(() => this.simulateGameRoomJoin(amount), 1000);
+                    return;
+                }
+                
                 const updateProgress = () => {
                     if (currentStep < progressSteps.length) {
                         const step = progressSteps[currentStep];
@@ -1611,10 +1635,29 @@
                 // Send bet to Unity game
                 if (this.unityInstance) {
                     try {
-                        this.unityInstance.SendMessage('GameManager', 'OnBetPlaced', amount.toString());
+                        // Try multiple Unity game object names
+                        const gameObjects = ['GameManager', 'GameController', 'MainController', 'Game'];
+                        let messageSent = false;
+                        
+                        for (const gameObject of gameObjects) {
+                            try {
+                                this.unityInstance.SendMessage(gameObject, 'OnBetPlaced', amount.toString());
+                                console.log(`✅ Bet sent to Unity ${gameObject}: ${amount}`);
+                                messageSent = true;
+                                break;
+                            } catch (error) {
+                                console.log(`⚠️ Could not send to ${gameObject}, trying next...`);
+                            }
+                        }
+                        
+                        if (!messageSent) {
+                            console.warn('⚠️ Could not find Unity game object to send bet');
+                        }
                     } catch (error) {
                         console.warn('⚠️ Could not send bet to Unity:', error);
                     }
+                } else {
+                    console.warn('⚠️ Unity instance not available for bet placement');
                 }
                 
                 // Trigger game room joined event
@@ -1622,6 +1665,9 @@
                     detail: { amount: amount }
                 });
                 window.dispatchEvent(event);
+                
+                // Show success message
+                this.showNotification(`Successfully joined game room with bet: ${amount}`, 'success');
             }
         }
 
