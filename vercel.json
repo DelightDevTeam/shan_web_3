@@ -1,4 +1,6 @@
 {
+  "buildCommand": "npm run build",
+  "outputDirectory": "/vercel/output",
   "headers": [
     {
       "source": "/Build/(.*).wasm",
@@ -42,6 +44,15 @@
     },
     {
       "source": "/TemplateData/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
+      ]
+    },
+    {
+      "source": "/sounds/(.*)",
       "headers": [
         {
           "key": "Cache-Control",
